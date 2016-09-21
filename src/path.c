@@ -9,6 +9,7 @@ typedef struct path {
 	gsize allocated_len;
 	bool constant;
 	bool statted;
+	bool exists;
 } *path;
 
 path path_new(gchar* s, gsize len) {
@@ -93,9 +94,11 @@ static void appendfast(path self, const gchar* s, gsize length) {
 
 
 path path_add(path self, ...) {
-	g_assert(self != NULL);
 	va_list arg;
 	va_start(arg, self);
+	if(self == NULL) {
+		self = CWD();
+	}
 	for(;;) {
 		gchar* next = va_arg(arg, gchar*);
 		if(next == NULL) break;
@@ -126,7 +129,10 @@ path path_lookup(GUserDirectory id) {
 struct stat path_stat(path self) {
 	if(!self->statted) {
 		self->statted = true;
-		g_assert(0==stat(self->base,&self->info));
+		self->exists = (0==stat(self->base,&self->info));
+		if(!self->exists) {
+			g_assert(errno == EEXIST);
+		}
 	}
 	return self->info;
 }	
@@ -187,4 +193,29 @@ void path_check_terminate(path self) {
 		printf("reached target %s (%s)\n",target,match);
 		exit(0);
 	}
+}
+
+path CWD(void) {
+	static struct path self = {
+		.base = ".",
+		.len = 1
+		.constant = true;
+	};
+	return &self;
+}
+
+bool path_exists(path self) {
+	return self->exists;
+}
+
+const char* path_add_ext(const char* name, const char* ext) {
+	static char buf[0x100];
+	ssize_t len = strlen(name);
+	ssize_t elen = strlen(ext);
+	assert(len + elen + 2 < 0x100);
+	memcpy(buf,name,len);
+	buf[len] = '.';
+	memcpy(buf+len+1,ext,elen);
+	buf[len+1+elen] = '\0';
+	return buf;
 }

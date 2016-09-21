@@ -8,7 +8,9 @@ path path_add(path self, ...);
 
 // look up a base path
 path path_lookup(GUserDirectory id);
-path path_home();
+path path_home(void);
+
+path CWD(void);
 
 const gchar* path_base(path);
 gsize path_len(path);
