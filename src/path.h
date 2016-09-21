@@ -19,3 +19,6 @@ void path_free(path);
 
 bool left_is_older(path left, path right);
 void path_check_terminate(path);
+
+// should this return a path? or a GString*?
+const char* path_add_ext(const char* name, const char* ext);
