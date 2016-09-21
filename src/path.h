@@ -14,3 +14,5 @@ const gchar* path_base(path);
 gsize path_len(path);
 
 void path_free(path);
+
+bool left_is_older(path left, path right);
