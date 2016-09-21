@@ -5,6 +5,7 @@ typedef struct path *path;
 
 // append gchar* components to path
 path path_add(path self, ...);
+path path_add1(path self, gchar* name);
 
 // look up a base path
 path path_lookup(GUserDirectory id);

@@ -92,6 +92,13 @@ static void appendfast(path self, const gchar* s, gsize length) {
 	};
 }
 
+path path_add1(path self, gchar* name) {
+	gsize len = g_strlen(name);
+	self = prepare_append(self, len+sizeof(G_DIR_SEPARATOR_S)-1);
+	appendfast(self,G_DIR_SEPARATOR_S,sizeof(G_DIR_SEPARATOR_S)-1);
+	appendslow(self,name,len);
+	return self;
+}
 
 path path_add(path self, ...) {
 	va_list arg;
@@ -102,10 +109,7 @@ path path_add(path self, ...) {
 	for(;;) {
 		gchar* next = va_arg(arg, gchar*);
 		if(next == NULL) break;
-		gsize len = g_strlen(next);
-		self = prepare_append(self, len+sizeof(G_DIR_SEPARATOR_S)-1);
-		appendfast(self,G_DIR_SEPARATOR_S,sizeof(G_DIR_SEPARATOR_S)-1);
-		appendslow(self,next,len);
+		self = path_add1(self, name);
 	}
 	return self;
 }
