@@ -180,3 +180,11 @@ bool left_is_older(path left, path right) {
 	return false;
 }
 
+void path_check_terminate(path self) {
+	char* match = getenv("TARGET");
+	if(match == NULL) return;
+	if(0==strcmp(self->base,match)) {
+		printf("reached target %s (%s)\n",target,match);
+		exit(0);
+	}
+}

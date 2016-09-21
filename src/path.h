@@ -16,3 +16,4 @@ gsize path_len(path);
 void path_free(path);
 
 bool left_is_older(path left, path right);
+void path_check_terminate(path);
