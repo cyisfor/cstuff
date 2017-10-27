@@ -18,13 +18,19 @@ typedef struct bstring {
 	size_t space;
 } bstring;
 
+typedef struct ownablestring {
+	const char* s;
+	size_t l;
+	bool owned; // s is owned by us.
+} ownablestring;
+
 #define STRING(mstring) ((string)mstring) // or bstring
 
 #define BLOCK_SIZE 0x200
 
-#define straddblock(st) st.space += BLOCK_SIZE; st.s = realloc(st.s,st.space)
+#define strgrow(st) st.space = (st.space * 3)>>1; st.s = realloc(st.s,st.space)
 
-#define strreserve(st,n) while(st.l + n > st.space) straddblock(st)
+#define strreserve(st,n) while(st.l + n > st.space) strgrow(st)
 
 #define straddn(st,c,n) { strreserve(st,n); memcpy(st.s + st.l, c, n); st.l += n; }
 
