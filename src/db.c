@@ -22,9 +22,12 @@ static bool derp(int res, int n, sqlite3_stmt* stmt, const char* tail, size_t sl
 
 result_handler default_result_handler = &derp;
 
-#define db_check(res) db_checkderp(res,__LINE__)
-
-int db_checkderp(int res, int line) {
+#ifdef DEBUG
+int db_checkderp(int res, int line)
+#else
+int db_check(int res, int line)
+#endif
+{
 	switch(res) {
 	case SQLITE_OK:
 	case SQLITE_ROW:
@@ -171,9 +174,17 @@ sqlite3_stmt* db_preparen(const char* s, size_t l) {
 	return stmt;
 }
 
-int db_stepderp(sqlite3_stmt* stmt,int line) {
-	return db_checkderp(sqlite3_step(stmt),line);
+#ifdef DEBUG
+int db_stepderp(sqlite3_stmt* stmt,const char* file, int line)
+{
+	return db_checkderp(sqlite3_step(stmt),file, line);
 }
+#else
+int db_step(sqlite3_stmt* stmt)	
+{
+	return db_check(sqlite3_step(stmt));
+}
+#endif
 
 ident db_lastrow(void) {
 	return sqlite3_last_insert_rowid(c);
