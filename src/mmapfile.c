@@ -6,7 +6,7 @@
 #include <assert.h>
 #include <unistd.h> // close
 
-void mmapfd(int fd, size_t* osize) {	 
+void* mmapfd(int fd, size_t* osize) {	 
 	 struct stat st;
 	 assert(0 == fstat(fd, &st));
 	 void* b = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
