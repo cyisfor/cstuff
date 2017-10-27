@@ -15,7 +15,7 @@ COMPILE=@echo COMPILE $*; $(CC) -ftabstop=2 -MT $@ -MMD $(CFLAGS) -c -o $@ $<
 
 all: statements2init
 
-N=statements2init db mmapfile
+N=statements2init db mmapfile search
 statements2init: $(O)
 	$(LINK)
 
