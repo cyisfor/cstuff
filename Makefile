@@ -13,7 +13,11 @@ COMPILE=@echo COMPILE $*; $(CC) -ftabstop=2 -MT $@ -MMD $(CFLAGS) -c -o $@ $<
 
 .PHONY: all clean
 
-all: 
+all: statements2init
+
+N=statements2init db
+statements2init: $(O)
+	$(LINK)
 
 data_to_header_string/pack:
 	cd data_to_header_string && ninja
