@@ -2,8 +2,6 @@
 #include <stdlib.h> // size_t
 #include <stdbool.h>
 
-
-
 typedef sqlite3_int64 ident;
 
 sqlite3* db_init(void);
