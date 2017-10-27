@@ -23,9 +23,9 @@ static bool derp(int res, int n, sqlite3_stmt* stmt, const char* tail, size_t sl
 result_handler default_result_handler = &derp;
 
 #ifdef DEBUG
-int db_checkderp(int res, int line)
+int db_checkderp(int res, const char* func, int line)
 #else
-int db_check(int res, int line)
+int db_check(int res)
 #endif
 {
 	switch(res) {
@@ -34,7 +34,15 @@ int db_check(int res, int line)
 	case SQLITE_DONE:
 		return res;
 	};
-	printf("%d sqlite error %s (%s)\n",line, sqlite3_errstr(res), sqlite3_errmsg(c));
+	printf(
+#ifdef DEBUG
+		"%s%d"
+#endif
+		"sqlite error %s (%s)\n",
+#ifdef DEBUG
+		func, line,
+#endif
+		sqlite3_errstr(res), sqlite3_errmsg(c));
 	abort();
 }
  
