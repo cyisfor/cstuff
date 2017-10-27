@@ -6,15 +6,17 @@
 #define LITSIZ(a) (sizeof(a)-1)
 #define LITLEN(a) a, LITSIZ(a)
 
-typedef struct string {
+/* C makes this almost unusable. You cannot create a mutable structure that points
+	 to const data. */
+typedef struct cstring {
 	const char* const s;
 	const size_t l;
-} string;
+} cstring;
 
-typedef struct mstring {
+typedef struct string {
 	const char* s;
 	size_t l;
-} mstring;
+} string;
 
 typedef struct bstring {
 	char* s;
@@ -29,7 +31,7 @@ typedef struct ownablestring {
 	// note, can't be cast to/from a bstring!
 } ownablestring;
 
-#define STRING(mstring) ((string)mstring) // or bstring
+#define CSTRING(string) ((cstring)string) // or bstring
 
 static
 bstring bstringstr(const char* s, size_t n) {
