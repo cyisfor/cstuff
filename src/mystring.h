@@ -1,6 +1,8 @@
 #include <string.h> // memcpy
 #include <stdio.h> // snprintf
 
+#define LITSIZ(a) (sizeof(a)-1)
+#define LITLEN(a) a, LITSIZ(a)
 
 typedef struct string {
 	const char* const s;
@@ -26,6 +28,19 @@ typedef struct ownablestring {
 } ownablestring;
 
 #define STRING(mstring) ((string)mstring) // or bstring
+
+static
+bstring bstringstr(const char* s, size_t n) {
+	bstring ret = {
+		.s = malloc(LITSIZ(lit)),
+		.l = LITSIZ(lit)
+		.space = LITSIZ(lit)
+	};
+	memcpy(ret.s,s,n);
+	return ret;
+}
+
+#define bstringlit(lit) bstringstr(LITLEN(lit))
 
 #define BLOCK_SIZE 0x200
 
