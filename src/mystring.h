@@ -33,3 +33,5 @@ typedef struct bstring {
 
 #define strrewind(st) st.l = 0
 #define strclear(st) free(st.s); st.s = NULL; st.l = 0; st.space = 0;
+
+#define STRANDLEN(st) st.s, st.l
