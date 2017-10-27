@@ -22,6 +22,7 @@ typedef struct ownablestring {
 	const char* s;
 	size_t l;
 	bool owned; // s is owned by us.
+	// note, can't be cast to/from a bstring!
 } ownablestring;
 
 #define STRING(mstring) ((string)mstring) // or bstring
