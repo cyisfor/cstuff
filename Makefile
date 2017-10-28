@@ -15,7 +15,7 @@ COMPILE=@echo COMPILE $*; $(CC) -ftabstop=2 -MT $@ -MMD $(CFLAGS) -c -o $@ $<
 
 all: statements2init search
 
-N=search_console db mmapfile search search_schema tag
+N=search_console db mmapfile search search_schema tag exceptions
 search: $(O)
 	$(LINK)
 
