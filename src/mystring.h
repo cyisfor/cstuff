@@ -1,3 +1,6 @@
+#ifndef _MYSTRING_H_
+#define _MYSTRING_H_
+
 #include <string.h> // memcpy
 #include <stdio.h> // snprintf
 #include <stdlib.h> // malloc
@@ -61,3 +64,6 @@ bstring bstringstr(const char* s, size_t n) {
 #define strclear(st) free(st.s); st.s = NULL; st.l = 0; st.space = 0;
 
 #define STRANDLEN(st) st.s, st.l
+
+
+#endif /* _MYSTRING_H_ */
