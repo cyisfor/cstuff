@@ -1,8 +1,10 @@
 VPATH=src libb64-1.2/src/
-P=glib-2.0 gtk+-3.0 gdk-3.0 sqlite3
+P=glib-2.0 gtk+-3.0 gdk-3.0 sqlite3 libpq
+
+export PKG_CONFIG_PATH=/home/.local/postgres/lib/pkgconfig
 
 # make sure pkg-config packages count as system headers to simplify -MMD
-CFLAGS=$(subst -I,-isystem ,$(shell pkg-config --cflags $P)) -I. -ggdb3 -Isrc
+CFLAGS=$(subst -I,-isystem ,$(shell pkg-config --cflags $P)) -I. -ggdb3 -Isrc -Ilibb64-1.2/include/
 LDFLAGS=`pkg-config --libs $P`
 
 ALLN:=
@@ -14,12 +16,16 @@ COMPILE=@echo COMPILE $*; $(CC) -ftabstop=2 -MT $@ -MMD $(CFLAGS) -c -o $@ $<
 
 .PHONY: all clean
 
-all: statements2init search
+all: search import
 
 DBN:=db mmapfile search_schema
 
 N=search_console search tag $(DBN)
 search: $(O)
+	$(LINK)
+
+N=import $(DBN) 
+import: $(O)
 	$(LINK)
 
 N=statements2init $(DBN)
