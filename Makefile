@@ -5,7 +5,7 @@ P=glib-2.0 gtk+-3.0 gdk-3.0 sqlite3
 CFLAGS=$(subst -I,-isystem ,$(shell pkg-config --cflags $P)) -I. -ggdb3 -Isrc
 LDFLAGS=`pkg-config --libs $P`
 
-ALLN:=exceptions
+ALLN:=
 O=$(patsubst %,o/%.o,$N $(ALLN)) \
 $(foreach name,$N $(ALLN),$(eval objects:=$$(objects) $(name)))
 
