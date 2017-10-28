@@ -1,3 +1,4 @@
+#include "exceptions.h"
 #include "db.h"
 #include "mmapfile.h"
 #include "mystring.h"
@@ -19,11 +20,10 @@ static bool derp(int res, int n, sqlite3_stmt* stmt, const char* tail, size_t sl
 	fwrite(tail,1,sl,stderr);
 	fputc('\n',stderr);
 	db_check(res);
+	return false;
 }
 
 result_handler default_result_handler = &derp;
-
-string derpsql = {};
 
 #ifdef DEBUG
 int db_checkderp(int res, const char* func, int line)
@@ -37,9 +37,6 @@ int db_check(int res)
 	case SQLITE_DONE:
 		return res;
 	};
-	if(derpsql.s) {
-		fprintf(stderr,"%.*s\n",derpsql.l,derpsql.s);
-	}
 	fprintf(stderr,
 #ifdef DEBUG
 		"%s%d"
@@ -50,11 +47,11 @@ int db_check(int res)
 #endif
 		sqlite3_errstr(res), sqlite3_errmsg(c));
 	fflush(stderr);
-	abort();
+	RAISE(res);
 }
  
 sqlite3_stmt *begin, *commit;
-#define LITLEN(lit) lit, sizeof(lit)-1
+
 sqlite3* db_init() {
 	//chdir(getenv("FILEDB"));
 	assert(SQLITE_OK == sqlite3_open_v2("media.sqlite", &c,																			
@@ -62,22 +59,6 @@ sqlite3* db_init() {
 																			| SQLITE_OPEN_NOMUTEX
 																			| SQLITE_OPEN_PRIVATECACHE,
 																			NULL));
-#ifdef dunnosqlite
-	sqlite3_stmt* stmt = NULL;
-	const char* tail = NULL;
-	int res = sqlite3_prepare_v2(c, "", 0,
-															 &stmt,
-															 &tail);
-
-	res = sqlite3_prepare_v2(c, LITLEN("\n-- hi\n"),
-															 &stmt,
-															 &tail);
-
-	res = sqlite3_prepare_v2(c, LITLEN("CREATE 123 DERP SELECT"),
-													 &stmt,
-													 &tail);
-	db_check(res);
-#endif
 	
 	sqlite3_extended_result_codes(c, 1);
 	db_check(sqlite3_prepare_v2(c, "BEGIN", 5,
@@ -183,11 +164,14 @@ void db_execmanyn(const char* s, size_t l, result_handler on_res) {
 
 sqlite3_stmt* db_preparen(const char* s, size_t l) {
 	sqlite3_stmt* stmt = NULL;
-	derpsql= ((string){s,l});
-	db_check(sqlite3_prepare_v2(c, s, l,
-													 &stmt,
-													 NULL));
-	derpsql.s = NULL;
+	TRY(res) {
+		db_check(sqlite3_prepare_v2(c, s, l,
+																&stmt,
+																NULL));
+	} CATCH {
+		fprintf(stderr,"preparing %.*s\n",s,l);
+	} UNTRY;
+
 	return stmt;
 }
 
@@ -199,7 +183,12 @@ int db_stepderp(sqlite3_stmt* stmt,const char* file, int line)
 #else
 int db_step(sqlite3_stmt* stmt)	
 {
-	return db_check(sqlite3_step(stmt));
+	TRY(res) {
+		return db_check(sqlite3_step(stmt));
+	} CATCH {
+		fprintf(stderr,"stepping over %s\n",sqlite3_sql(stmt));
+		RAISE(res);
+	}
 }
 #endif
 
