@@ -38,10 +38,10 @@ data_to_header_string/pack: | data_to_header_string
 	cd data_to_header_string && ninja
 
 define PACK
-generated: o/$F.gen.c
+generated: o/$F.pack.c
 o/$(dir $F): | o
 	mkdir $$@
-o/$F.gen.c: $F data_to_header_string/pack | o o/$(dir $F)
+o/$F.pack.c: $F data_to_header_string/pack | o o/$(dir $F)
 	@echo PACK $F $N
 	@name=$N ./data_to_header_string/pack < $F >$$@.temp
 	@mv $$@.temp $$@
@@ -51,7 +51,13 @@ N=schema
 F=sql/search_schema.sql
 $(eval $(PACK))
 
-o/search_schema.o: o/sql/search_schema.sql.gen.c
+N=schema
+F=sql/schema.sql
+$(eval $(PACK))
+
+o/search_schema.o: o/sql/search_schema.sql.pack.c
+
+o/db.o: o/sql/schema.sql.pack.c
 
 #N=uiData
 #F=ui.xml
