@@ -1,4 +1,3 @@
-#include "exceptions.h"
 #include "db.h"
 #include "mmapfile.h"
 #include "mystring.h"
@@ -27,12 +26,17 @@ static bool derp(int res, int n, sqlite3_stmt* stmt, const char* tail, size_t sl
 
 result_handler default_result_handler = &derp;
 
+int dberr = 0;
+
 #ifdef DEBUG
 int db_checkderp(int res, const char* func, int line)
 #else
-int db_check(int res)
+int db_checkderp(int res)
 #endif
 {
+	if(dberr) {
+		fprintf(stderr, "check while erroring %s\n",sqlite3_errstr(res));
+	}
 	switch(res) {
 	case SQLITE_OK:
 	case SQLITE_ROW:
@@ -49,7 +53,8 @@ int db_check(int res)
 #endif
 		sqlite3_errstr(res), sqlite3_errmsg(c));
 	fflush(stderr);
-	RAISE(res);
+	dberr = res;
+	return res;
 }
  
 sqlite3_stmt *begin, *commit;
@@ -69,6 +74,7 @@ sqlite3* db_init() {
 	db_check(sqlite3_prepare_v2(c, "COMMIT", 6,
 															 &commit,
 															 NULL));
+	DB_OK;
 
 #include "o/sql/schema.sql.pack.c"
 	db_execmanyn(schema,schema_length,NULL);
@@ -169,14 +175,14 @@ void db_execmanyn(const char* s, size_t l, result_handler on_res) {
 
 sqlite3_stmt* db_preparen(const char* s, size_t l) {
 	sqlite3_stmt* stmt = NULL;
-	TRY(res) {
+	try {
 		db_check(sqlite3_prepare_v2(c, s, l,
 																&stmt,
 																&db_next));
-	} CATCH {
+	} catch(int e);
 		fprintf(stderr,"preparing %.*s\n",l,s);
-		RAISE(res);
-	} UNTRY;
+		throw(e);
+	}
 
 	return stmt;
 }

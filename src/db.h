@@ -21,6 +21,10 @@ int db_check(int res);
 int db_step(sqlite3_stmt* stmt);
 #endif
 
+extern int dberr;
+
+#define DB_OK if(dberr != 0) abort();
+
 #define db_exec(st) db_execn(st.s,st.l)
 int db_execn(const char* s, size_t l);
 
