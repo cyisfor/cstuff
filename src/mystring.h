@@ -52,11 +52,11 @@ bstring bstringstr(const char* s, size_t n) {
 
 #define BLOCK_SIZE 0x200
 
-#define strgrow(st) st.space = (st.space * 3)>>1; st.s = realloc(st.s,st.space)
+#define strgrow(st,newmin) st.space = st.space ? (st.space * 3)>>1 : newmin; st.s = realloc(st.s,st.space)
 
 // could say st.space = pow(1.5,log(st.l+n)/(log(3)-log(2))+1)
 // but that seems like a lot of expensive math calls, when the loop'll only happen like 4 times max
-#define strreserve(st,n) while(st.l + n > st.space) strgrow(st)
+#define strreserve(st,n) while(st.l + n > st.space) strgrow(st,st.l+n)
 
 #define straddn(st,c,n) { strreserve(st,n); memcpy(st.s + st.l, c, n); st.l += n; }
 
