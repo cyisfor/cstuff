@@ -28,20 +28,20 @@ o/tag.o: o/tag.sql.gen.h
 o/search.o: o/search.queries.sql.gen.h
 o/search.o: o/search.sql.gen.c
 
-data_to_header_string/pack:
+data_to_header_string/pack: | data_to_header_string
 	cd data_to_header_string && ninja
 
 define PACK
 generated: o/$F.gen.c
-$(dir $F):
-	mkdir $@
-o/$F.gen.c: $F data_to_header_string/pack | o $(dir $F)
+o/$(dir $F): o
+	mkdir $$@
+o/$F.gen.c: $F data_to_header_string/pack | o o/$(dir $F)
 	@echo PACK $F $N
 	@name=$N ./data_to_header_string/pack < $F >$$@.temp
 	@mv $$@.temp $$@
 endef
 
-N=search_schema
+N=schema
 F=sql/search_schema.sql
 $(eval $(PACK))
 
@@ -68,3 +68,6 @@ clean:
 	(cd data_to_header_string; exec ninja -t clean)
 
 -include $(patsubst %, o/%.d,$(objects))
+
+data_to_header_string:
+	git clone ~/code/data_to_header_string
