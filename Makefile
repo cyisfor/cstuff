@@ -5,8 +5,9 @@ P=glib-2.0 gtk+-3.0 gdk-3.0 sqlite3
 CFLAGS=$(subst -I,-isystem ,$(shell pkg-config --cflags $P)) -I. -ggdb3 -Isrc
 LDFLAGS=`pkg-config --libs $P`
 
-O=$(patsubst %,o/%.o,$N) \
-$(foreach name,$N,$(eval objects:=$$(objects) $(name)))
+ALLN:=exceptions
+O=$(patsubst %,o/%.o,$N $(ALLN)) \
+$(foreach name,$N $(ALLN),$(eval objects:=$$(objects) $(name)))
 
 LINK=@echo LINK $@; $(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 COMPILE=@echo COMPILE $*; $(CC) -ftabstop=2 -MT $@ -MMD $(CFLAGS) -c -o $@ $<
@@ -15,11 +16,13 @@ COMPILE=@echo COMPILE $*; $(CC) -ftabstop=2 -MT $@ -MMD $(CFLAGS) -c -o $@ $<
 
 all: statements2init search
 
-N=search_console db mmapfile search search_schema tag exceptions
+DBN:=db mmapfile search_schema
+
+N=search_console search tag $(DBN)
 search: $(O)
 	$(LINK)
 
-N=statements2init db mmapfile search_schema
+N=statements2init $(DBN)
 statements2init: $(O)
 	$(LINK)
 
