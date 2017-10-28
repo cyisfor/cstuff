@@ -1,7 +1,4 @@
-// CPP sux
-#define symjoin2(a,b) a ## b
-#define symjoin(a,b) symjoin2(a,b)
-
+#include "symjoin.h"
 #define DEFERNAME(name,var) auto void name(void* nada); \
 	char __attribute__((__cleanup__(name))) var; \
 	void name(void* nada)
