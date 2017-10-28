@@ -34,7 +34,7 @@ int db_check(int res)
 	case SQLITE_DONE:
 		return res;
 	};
-	printf(
+	fprintf(stderr,
 #ifdef DEBUG
 		"%s%d"
 #endif
@@ -43,6 +43,7 @@ int db_check(int res)
 		func, line,
 #endif
 		sqlite3_errstr(res), sqlite3_errmsg(c));
+	fflush(stderr);
 	abort();
 }
  
