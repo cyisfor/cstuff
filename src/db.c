@@ -70,6 +70,9 @@ sqlite3* db_init() {
 															 &commit,
 															 NULL));
 
+#include "o/sql/schema.sql.pack.c"
+	db_execmanyn(schema,schema_length,NULL);
+
 	return c;
 }
 
