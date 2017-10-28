@@ -171,7 +171,8 @@ sqlite3_stmt* db_preparen(const char* s, size_t l) {
 																&stmt,
 																&db_next));
 	} CATCH {
-		fprintf(stderr,"preparing %.*s\n",s,l);
+		fprintf(stderr,"preparing %.*s\n",l,s);
+		RAISE(res);
 	} UNTRY;
 
 	return stmt;
