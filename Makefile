@@ -15,11 +15,11 @@ COMPILE=@echo COMPILE $*; $(CC) -ftabstop=2 -MT $@ -MMD $(CFLAGS) -c -o $@ $<
 
 all: statements2init
 
-N=statements2init db mmapfile search search_schema
+N=statements2init db mmapfile search_schema
 statements2init: $(O)
 	$(LINK)
 
-o/%.sql.gen.h: sql/%.sql search_schema
+o/%.sql.stmts.h: sql/%.sql 
 	./statements2init <$< >$@.temp
 	mv $@.temp $@
 
@@ -41,9 +41,11 @@ o/$F.gen.c: $F data_to_header_string/pack | o $(dir $F)
 	@mv $$@.temp $$@
 endef
 
-N=search
-F=sql/search.sql
+N=search_schema
+F=sql/search_schema.sql
 $(eval $(PACK))
+
+o/search_schema.o: o/sql/search_schema.sql.gen.c
 
 #N=uiData
 #F=ui.xml
