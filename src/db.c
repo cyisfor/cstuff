@@ -31,7 +31,7 @@ int dberr = 0;
 #ifdef DEBUG
 int db_checkderp(int res, const char* func, int line)
 #else
-int db_checkderp(int res)
+int db_check(int res)
 #endif
 {
 	if(dberr) {
@@ -175,13 +175,12 @@ void db_execmanyn(const char* s, size_t l, result_handler on_res) {
 
 sqlite3_stmt* db_preparen(const char* s, size_t l) {
 	sqlite3_stmt* stmt = NULL;
-	try {
-		db_check(sqlite3_prepare_v2(c, s, l,
-																&stmt,
-																&db_next));
-	} catch(int e);
+	db_check(sqlite3_prepare_v2(c, s, l,
+															&stmt,
+															&db_next));
+	if(dberr) {
 		fprintf(stderr,"preparing %.*s\n",l,s);
-		throw(e);
+		return NULL;
 	}
 
 	return stmt;
@@ -195,12 +194,11 @@ int db_stepderp(sqlite3_stmt* stmt,const char* file, int line)
 #else
 int db_step(sqlite3_stmt* stmt)	
 {
-	TRY(res) {
-		return db_check(sqlite3_step(stmt));
-	} CATCH {
+	int res = db_check(sqlite3_step(stmt));
+	if(dberr) {
 		fprintf(stderr,"stepping over %s\n",sqlite3_sql(stmt));
-		RAISE(res);
-	} UNTRY;
+	}
+	return res;
 }
 #endif
 
