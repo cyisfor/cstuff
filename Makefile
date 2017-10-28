@@ -19,20 +19,20 @@ N=statements2init db mmapfile search_schema
 statements2init: $(O)
 	$(LINK)
 
-o/%.stmts.sql.h: sql/%.stmts.sql
+o/%.stmts.sql.c: sql/%.stmts.sql statements2init
 	./statements2init <$< >$@.temp
 	mv $@.temp $@
 
-o/tag.o: o/tag.sql.gen.h
+o/tag.o: o/tag.stmts.sql.c
 
-o/search.o: o/search.stmts.sql.h
+o/search.o: o/search.stmts.sql.c
 
 data_to_header_string/pack: | data_to_header_string
 	cd data_to_header_string && ninja
 
 define PACK
 generated: o/$F.gen.c
-o/$(dir $F): o
+o/$(dir $F): | o
 	mkdir $$@
 o/$F.gen.c: $F data_to_header_string/pack | o o/$(dir $F)
 	@echo PACK $F $N
