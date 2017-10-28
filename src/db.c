@@ -1,5 +1,6 @@
 #include "db.h"
 #include "mmapfile.h"
+#include "mystring.h"
 
 #include <sys/mman.h> // munmap
 #include <string.h> // memchr
@@ -22,6 +23,8 @@ static bool derp(int res, int n, sqlite3_stmt* stmt, const char* tail, size_t sl
 
 result_handler default_result_handler = &derp;
 
+string derpsql = {};
+
 #ifdef DEBUG
 int db_checkderp(int res, const char* func, int line)
 #else
@@ -34,6 +37,9 @@ int db_check(int res)
 	case SQLITE_DONE:
 		return res;
 	};
+	if(derpsql.s) {
+		fprintf(stderr,"%.*s\n",derpsql.l,derpsql.s);
+	}
 	fprintf(stderr,
 #ifdef DEBUG
 		"%s%d"
@@ -177,9 +183,11 @@ void db_execmanyn(const char* s, size_t l, result_handler on_res) {
 
 sqlite3_stmt* db_preparen(const char* s, size_t l) {
 	sqlite3_stmt* stmt = NULL;
+	derpsql= ((string){s,l});
 	db_check(sqlite3_prepare_v2(c, s, l,
 													 &stmt,
 													 NULL));
+	derpsql.s = NULL;
 	return stmt;
 }
 
