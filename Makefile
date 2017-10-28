@@ -25,16 +25,24 @@ o/%.sql.gen.h: sql/%.sql statements2init
 
 o/tag.o: o/tag.sql.gen.h
 
+o/search.o o/search.queries.sql.gen.h
+
 data_to_header_string/pack:
 	cd data_to_header_string && ninja
 
 define PACK
 generated: o/$F.gen.c
-o/$F.gen.c: $F data_to_header_string/pack | o
+$(dir $F):
+	mkdir $@
+o/$F.gen.c: $F data_to_header_string/pack | o $(dir $F)
 	@echo PACK $F $N
-	@name=$N ./data_to_header_string/pack < src/$F >$$@.temp
+	@name=$N ./data_to_header_string/pack < $F >$$@.temp
 	@mv $$@.temp $$@
 endef
+
+N=search
+F=sql/search.sql
+$(eval $(PACK))
 
 #N=uiData
 #F=ui.xml
