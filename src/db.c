@@ -14,6 +14,8 @@
 
 sqlite3* c = NULL;
 
+const char* db_next = NULL; // eh
+
 static bool derp(int res, int n, sqlite3_stmt* stmt, const char* tail, size_t sl, size_t l) {
 	if(res == SQLITE_OK || res == SQLITE_ROW || res == SQLITE_DONE) return false;
 	printf("uhh %d %d %d %d\n",res,SQLITE_OK,SQLITE_ROW,SQLITE_DONE);
@@ -167,7 +169,7 @@ sqlite3_stmt* db_preparen(const char* s, size_t l) {
 	TRY(res) {
 		db_check(sqlite3_prepare_v2(c, s, l,
 																&stmt,
-																NULL));
+																&db_next));
 	} CATCH {
 		fprintf(stderr,"preparing %.*s\n",s,l);
 	} UNTRY;
@@ -188,7 +190,7 @@ int db_step(sqlite3_stmt* stmt)
 	} CATCH {
 		fprintf(stderr,"stepping over %s\n",sqlite3_sql(stmt));
 		RAISE(res);
-	}
+	} UNTRY;
 }
 #endif
 

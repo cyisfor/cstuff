@@ -33,6 +33,7 @@ void db_execmanyn(const char* s, size_t l, result_handler on_err);
 
 void db_load(const char* path, result_handler on_res);
 
+extern const char* db_next; // ehhh
 #define db_prepare(lit) db_preparen(lit,sizeof(lit)-1);
 sqlite3_stmt* db_preparen(const char* s, size_t l);
 
