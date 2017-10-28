@@ -15,17 +15,18 @@ COMPILE=@echo COMPILE $*; $(CC) -ftabstop=2 -MT $@ -MMD $(CFLAGS) -c -o $@ $<
 
 all: statements2init
 
-N=statements2init db mmapfile search
+N=statements2init db mmapfile search search_schema
 statements2init: $(O)
 	$(LINK)
 
-o/%.sql.gen.h: sql/%.sql statements2init
+o/%.sql.gen.h: sql/%.sql search_schema
 	./statements2init <$< >$@.temp
 	mv $@.temp $@
 
 o/tag.o: o/tag.sql.gen.h
 
-o/search.o o/search.queries.sql.gen.h
+o/search.o: o/search.queries.sql.gen.h
+o/search.o: o/search.sql.gen.c
 
 data_to_header_string/pack:
 	cd data_to_header_string && ninja
