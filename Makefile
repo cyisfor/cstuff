@@ -13,7 +13,11 @@ COMPILE=@echo COMPILE $*; $(CC) -ftabstop=2 -MT $@ -MMD $(CFLAGS) -c -o $@ $<
 
 .PHONY: all clean
 
-all: statements2init
+all: statements2init search
+
+N=search_console db mmapfile search search_schema tag
+search: $(O)
+	$(LINK)
 
 N=statements2init db mmapfile search_schema
 statements2init: $(O)
