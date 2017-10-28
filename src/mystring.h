@@ -34,7 +34,8 @@ typedef struct ownablestring {
 	// note, can't be cast to/from a bstring!
 } ownablestring;
 
-#define CSTRING(string) ((cstring)string) // or bstring
+#define CSTRING(str) (*((const string*)&str)) // any kind of string
+#define STRING(str) (*((string*)&str)) // any kind of string, but may segfault
 
 static
 bstring bstringstr(const char* s, size_t n) {
