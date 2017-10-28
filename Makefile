@@ -19,14 +19,13 @@ N=statements2init db mmapfile search_schema
 statements2init: $(O)
 	$(LINK)
 
-o/%.sql.stmts.h: sql/%.sql 
+o/%.stmts.sql.h: sql/%.stmts.sql
 	./statements2init <$< >$@.temp
 	mv $@.temp $@
 
 o/tag.o: o/tag.sql.gen.h
 
-o/search.o: o/search.queries.sql.gen.h
-o/search.o: o/search.sql.gen.c
+o/search.o: o/search.stmts.sql.h
 
 data_to_header_string/pack: | data_to_header_string
 	cd data_to_header_string && ninja
