@@ -52,19 +52,48 @@ bstring bstringstr(const char* s, size_t n) {
 
 #define BLOCK_SIZE 0x200
 
-#define strgrow(st,newmin) st.space = st.space ? (st.space * 3)>>1 : newmin; st.s = realloc(st.s,st.space)
+static
+void strgrow(bstring* st, size_t newmin) {
+	st->space = (st->space * 3)>>1;
+	if(st->space < newmin)
+		st->space = newmin;
+	st->s = realloc(st->s, st->space);
+}
 
-// could say st.space = pow(1.5,log(st.l+n)/(log(3)-log(2))+1)
-// but that seems like a lot of expensive math calls, when the loop'll only happen like 4 times max
-#define strreserve(st,n) while(st.l + n > st.space) strgrow(st,st.l+n)
+static
+void strreserve(bstring* st, size_t n) {
+	// could say st.space = pow(1.5,log(st.l+n)/(log(3)-log(2))+1)
+	// but that seems like a lot of expensive math calls, when the loop'll only happen like 4 times max
+	while(st->l + n > st->space) strgrow(st,st->l+n);
+}
 
-#define straddn(st,c,n) { strreserve(st,n); memcpy(st.s + st.l, c, n); st.l += n; }
+static
+void straddn(bstring* st, const char* c, size_t n) {
+	strreserve(st, n);
+	memcpy(st->s + st->l, c, n);
+	st->l += n;
+}
 
 #define stradd(st,lit) straddn(st,lit,sizeof(lit)-1)
-#define straddint(st,i) strreserve(st,0x10); st.l += snprintf(st.s + st.l, 0x10, "%x",i);
 
-#define strrewind(st) st.l = 0
-#define strclear(st) free(st.s); st.s = NULL; st.l = 0; st.space = 0;
+static
+void straddint(bstring* st, int i) {
+	strreserve(st,0x10);
+	st->l += snprintf(st->s + st->l, 0x10, "%x",i);
+}
+
+static
+void strrewind(bstring* st) {
+	st->l = 0;
+}
+
+static
+void strclear(bstring* st) {
+	free(st->s);
+	st->s = NULL;
+	st->l = 0;
+	st->space = 0;
+}
 
 #define STRANDLEN(st) st.s, st.l
 
