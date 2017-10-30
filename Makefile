@@ -1,44 +1,41 @@
-VPATH=src libb64-1.2/src/
-P=glib-2.0 gtk+-3.0 gdk-3.0 sqlite3 libpq
+<<<<<<< HEAD
+VPATH=src
+P=
 
-export PKG_CONFIG_PATH=/home/.local/postgres/lib/pkgconfig
+export PKG_CONFIG_PATH=
 
+CFLAGS+=-ggdb3
 # make sure pkg-config packages count as system headers to simplify -MMD
-CFLAGS=$(subst -I,-isystem ,$(shell pkg-config --cflags $P)) -I. -ggdb3 -Isrc -Ilibb64-1.2/include/
-LDFLAGS=`pkg-config --libs $P`
+CFLAGS+=$(subst -I,-isystem ,$(shell pkg-config --cflags $P))
+CFLAGS+=-ftabstop=2 -fdiagnostic-colors=auto
+LDFLAGS+=`pkg-config --libs $P`
 
-ALLN:=
+CFLAGS+=$(patsubst %,-I%,$(INC))
+
+INC:=.
+ALLN:=common
+
 O=$(patsubst %,o/%.o,$N $(ALLN)) \
 $(foreach name,$N $(ALLN),$(eval objects:=$$(objects) $(name)))
 
-LINK=@echo LINK $@; $(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
-COMPILE=@echo COMPILE $*; $(CC) -ftabstop=2 -MT $@ -MMD $(CFLAGS) -c -o $@ $<
+OS=$(patsubst %,o/%.os,$N $(ALLN)) \
+$(foreach name,$N $(ALLN),$(eval objects:=$$(objects) $(name)))
+
+EXE=@echo EXE $@; $(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+LIBRARY=@echo LIBRARY $@; $(CC) -shared -fPIC $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+COMPILE=@echo COMPILE $*; $(CC) -MT $@ -MMD $(CFLAGS) -c -o $@ $<
 
 .PHONY: all clean
 
-all: search import
+all: main
 
-DBN:=db mmapfile search_schema
+N=main
+main: $(O)
+	$(EXE)
 
-N=search_console search tag $(DBN)
-search: $(O)
-	$(LINK)
-
-N=import $(DBN) 
-import: $(O)
-	$(LINK)
-
-N=statements2init $(DBN)
-statements2init: $(O)
-	$(LINK)
-
-o/%.stmts.sql.c: sql/%.stmts.sql statements2init
-	./statements2init <$< >$@.temp
+o/%.generate.c: sql/%.generate generator
+	./generator <$< >$@.temp
 	mv $@.temp $@
-
-o/tag.o: o/tag.stmts.sql.c
-
-o/search.o: o/search.stmts.sql.c
 
 data_to_header_string/pack: | data_to_header_string
 	cd data_to_header_string && ninja
@@ -89,3 +86,36 @@ clean:
 
 data_to_header_string:
 	git clone ~/code/data_to_header_string
+=======
+VPATH=src
+P=libxml-2.0
+CFLAGS+=$(shell pkg-config --cflags $(P))
+LDLIBS+=$(shell pkg-config --libs $(P))
+LDLIBS+=-lpcre
+CFLAGS+=-Ilibxmlfixes
+CFLAGS+=-ggdb
+
+all: main
+
+LINK=$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+O=$(patsubst %,o/%.o,$(N))
+
+N=main wordcount
+main: $(O) 
+	$(LINK) libxmlfixes/libxmlfixes.a
+
+o/main.o: libxmlfixescheck
+
+libxmlfixescheck: libxmlfixes
+	$(MAKE) -C libxmlfixes
+
+libxmlfixes:
+	git clone ~/code/libxmlfixes/
+
+
+o/%.o: %.c | o
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+o:
+	mkdir $@
+>>>>>>> c0cb6d6e7ca0fecf76e0a9a34f442f9a1ca3bd0b
