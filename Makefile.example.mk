@@ -10,8 +10,14 @@ export PKG_CONFIG_PATH=
 CFLAGS+=$(subst -I,-isystem ,$(shell pkg-config --cflags $P))
 LDLIBS+=`pkg-config --libs $P`
 
-# debugging eh
-CFLAGS+=-ggdb3
+# debugging eh, switch -ggdb for -O2 when finished debugging
+# I don't recommend -g -O2 because it makes stepping through your code like...
+# "what? optimized away? aw man!"
+# "wait, why is it repeating the same two lines like 3 times?"
+# "oh hey, after the second time suddenly the variable's not optimized away!"
+# "Is stepping through really going to repeat every 2 lines? It is, isn't it?"
+# "I just need to see what this function returns AH DAMMIT IT WENT UP 6 RETURNS"
+CFLAGS+=-ggdb
 CFLAGS+=-ftabstop=2 -fdiagnostic-colors=auto
 
 # any includes that are target specific, just set INC=
