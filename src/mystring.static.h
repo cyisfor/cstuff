@@ -57,6 +57,7 @@ void strgrow(bstring* st, size_t newmin) {
 	st->space = (st->space * 3)>>1;
 	if(st->space < newmin)
 		st->space = newmin;
+	st->s = realloc(st->s, st->space);
 }
 
 static
@@ -73,11 +74,26 @@ void straddn(bstring* st, const char* c, size_t n) {
 	st->l += n;
 }
 
-#define stradd(st,lit) straddn(&st,lit,sizeof(lit)-1)
-#define straddint(st,i) strreserve(&st,0x10); st.l += snprintf(st.s + st.l, 0x10, "%x",i);
+#define stradd(st,lit) straddn(st,lit,sizeof(lit)-1)
 
-#define strrewind(st) st.l = 0
-#define strclear(st) free(st.s); st.s = NULL; st.l = 0; st.space = 0;
+static
+void straddint(bstring* st, int i) {
+	strreserve(st,0x10);
+	st->l += snprintf(st->s + st->l, 0x10, "%x",i);
+}
+
+static
+void strrewind(bstring* st) {
+	st->l = 0;
+}
+
+static
+void strclear(bstring* st) {
+	free(st->s);
+	st->s = NULL;
+	st->l = 0;
+	st->space = 0;
+}
 
 #define STRANDLEN(st) st.s, st.l
 
