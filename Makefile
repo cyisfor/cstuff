@@ -2,6 +2,7 @@ VPATH=src
 P=libxml-2.0
 CFLAGS+=$(shell pkg-config --cflags $(P))
 LDLIBS+=$(shell pkg-config --libs $(P))
+LDLIBS+=-lpcre
 CFLAGS+=-Ilibxmlfixes
 CFLAGS+=-ggdb
 
