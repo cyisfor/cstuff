@@ -73,8 +73,8 @@ void straddn(bstring* st, const char* c, size_t n) {
 	st->l += n;
 }
 
-#define stradd(st,lit) straddn(st,lit,sizeof(lit)-1)
-#define straddint(st,i) strreserve(st,0x10); st.l += snprintf(st.s + st.l, 0x10, "%x",i);
+#define stradd(st,lit) straddn(&st,lit,sizeof(lit)-1)
+#define straddint(st,i) strreserve(&st,0x10); st.l += snprintf(st.s + st.l, 0x10, "%x",i);
 
 #define strrewind(st) st.l = 0
 #define strclear(st) free(st.s); st.s = NULL; st.l = 0; st.space = 0;
