@@ -18,7 +18,7 @@ LDLIBS+=`pkg-config --libs $P`
 # "Is stepping through really going to repeat every 2 lines? It is, isn't it?"
 # "I just need to see what this function returns AH DAMMIT IT WENT UP 6 RETURNS"
 CFLAGS+=-ggdb
-CFLAGS+=-ftabstop=2 -fdiagnostic-colors=auto
+CFLAGS+=-ftabstop=2 -fdiagnostics-color=auto
 
 # any includes that are target specific, just set INC=
 CFLAGS+=$(patsubst %,-I%,$(INC))
