@@ -74,17 +74,41 @@ $(eval $(PACK))
 # turns data into .c files, then you #include o/$(whatever).pack.c
 
 # generate objects, and also update .d files
-o/%.o: %.c | o
+# this is a really sneaky trick, so I'll explain
+# thanks to Tom Tromney I guess for this trick
+# http://make.mad-scientist.net/papers/advanced-auto-dependency-generation/
+
+o/%.o: %.c o/%.d | o
 	$(COMPILE)
 
-# since above regenerates .d, only need this rule when .d doesn't exist
-# technically we could have the above use targets o/%.d and o/%.o but... that ends up
-# acting weird... and making $@ pretty much worthless
+o/%.d: | o ;
 
-o/%.d: | %.c o
-	@echo DEP $*; $(CC) -ftabstop=2 -MT o/$*.o -MM -MG $(CFLAGS) -c -o $@ $(firstword $|)
+# ---
 
-# be sure that everything generating files in o depends on o (order only)
+# since all o/%.d files have an empty recipe, with no (non-order-only)
+# prerequisites, then if o/something.d file exists, then make o/something.d is a no-op, and
+# o/something.d is always up-to-date, so o/something.o never gets compiled on its account.
+
+# but if o/something.d doesn't exist... it's considered out-of-date!
+# since it's not .PHONY, it's considered up-to-date if it exists, but if not,
+# then o/%.o has an out-of-date dependency, and needs to be rebuilt!
+
+# rebuilding .o causes .d to be created as a side effect, even though make has
+# no idea this is the case. Further invocations of make will find .d existing just fine, and
+# thus will only rebuild .o if .c changes. make will consider the old .d to be up-to-date,
+# and will never update it... but gcc will.
+
+# so every time the .c changes, make knows to update the .o, and has no idea that .d
+# is out-of-date, but in updating the .o, gcc also updates the .d ensuring that it isn't
+# out-of-date. Thus the .d always remains up-to-date, and is created if it doesn't exist
+
+# Thus, if your compilation produces multiple files, they should NOT be multiple targets
+# instead, there should be one target for the main generated file, and that target should
+# depend on the source, and also the other generated files, which should have empty recipes.
+
+# ---
+
+# don't forget to add an order-only prerequisite for everything generating files in o
 o:
 	mkdir o
 
@@ -98,6 +122,8 @@ clean:
 	@read
 	git clean -fdx
 	(cd data_to_header_string; exec ninja -t clean)
+
+# don't include (generate) .d files if we're cleaning, please.
 
 ifneq ($(MAKECMDGOALS),clean)
 # include all the dependencies for the modules found so far via $(N) / $(O)
