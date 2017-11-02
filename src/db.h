@@ -4,7 +4,7 @@
 
 typedef sqlite3_int64 ident;
 
-sqlite3* db_init(const char* path);
+void db_init(const char* path);
 void db_close(void);
 
 // this is just to be easier to read...

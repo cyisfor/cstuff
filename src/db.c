@@ -57,11 +57,11 @@ int db_check(int res)
 	return res;
 }
  
-sqlite3_stmt *begin, *commit;
+sqlite3_stmt *begin, *commit, *rollback;
 
-void db_init() {
+void db_init(const char* path) {
 	//chdir(getenv("FILEDB"));
-	assert(SQLITE_OK == sqlite3_open_v2("media.sqlite", &c,																			
+	assert(SQLITE_OK == sqlite3_open_v2(path, &c,																			
 																		SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
 																			| SQLITE_OPEN_NOMUTEX
 																			| SQLITE_OPEN_PRIVATECACHE,
@@ -74,6 +74,9 @@ void db_init() {
 	db_check(sqlite3_prepare_v2(c, "COMMIT", 6,
 															 &commit,
 															 NULL));
+	db_check(sqlite3_prepare_v2(c, "ROLLBACK", 8,
+															&rollback,
+															NULL));
 	DB_OK;
 	return;
 }
@@ -130,6 +133,7 @@ void db_close(void) {
 			
 	sqlite3_finalize(begin);
 	sqlite3_finalize(commit);
+	sqlite3_finalize(rollback);
 	
 	int attempt = 0;
 	for(;attempt<10;++attempt) {
