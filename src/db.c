@@ -160,8 +160,18 @@ void db_load(const char* path, result_handler on_res) {
 	size_t len = 0;
 	const char* sql = mmapfile(path,&len);
 	char* errmsg = NULL;
-	db_execmanyn(sql, len, on_res);
+	if(on_res) {
+		int callback(void* ctxt, int columns, char** values, char** names) {
+			bool ok = on_res(SQLITE_ROW, NULL, values[0], columns, -1);
+			return 0;
+		}
+		sqlite3_exec(c, sql, callback, NULL, &errmsg);
+	} else {
+		sqlite3_exec(c, sql, NULL, NULL, &errmsg);
+	}
+	//db_execmanyn(sql, len, on_res);
 	munmap((void*)sql, len);
+	return;
 }
 
 int db_execn(const char* s, size_t l) {
