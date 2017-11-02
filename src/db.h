@@ -5,9 +5,6 @@
 typedef sqlite3_int64 ident;
 
 sqlite3* db_init(const char* path);
-void db_begin(void);
-void db_commit(void);
-void db_retransaction(void);
 void db_close(void);
 
 #ifdef DEBUG
@@ -45,3 +42,11 @@ extern const char* db_next; // ehhh
 sqlite3_stmt* db_preparen(const char* s, size_t l);
 
 ident db_lastrow(void);
+
+void db_begin(void);
+void db_commit(void);
+void db_retransaction(void);
+
+#include "defer.h"
+
+#define TRANSACTION db_begin(); DEFER { if(dberr) db_rollback() else db_commit(); }
