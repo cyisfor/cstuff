@@ -76,29 +76,59 @@ sqlite3* db_init() {
 															 NULL));
 	DB_OK;
 
-#include "o/sql/schema.sql.pack.c"
-	db_execmanyn(schema,schema_length,NULL);
-
 	return c;
 }
 
+void db_once(sqlite3_stmt* stmt) {
+	int res = db_check(sqlite3_step(stmt));
+	assert(res != SQLITE_ROW);
+	sqlite3_reset(stmt);
+}
+
+bool in_transaction = false;
 
 void db_begin() {
-	db_check(sqlite3_step(begin));
-	sqlite3_reset(begin);
+	if(in_transaction) {
+		//db_retransaction() <- will use the innermost nested transaction, not the outermost one
+		return;
+	}
+	in_transaction = true;
+	db_once(begin);
 }
 
 void db_commit() {
-	db_check(sqlite3_step(commit));
-	sqlite3_reset(commit);
+	if(!in_transaction) return;
+	db_once(commit);
+	in_transaction = false;
+}
+
+void db_rollback() {
+	if(!in_transaction) return;
+	db_once(rollback);
+	in_transaction = false;
 }
 
 void db_retransaction() {
-	db_commit();
-	db_begin();
+	if(!in_transaction) return;
+	if(dberr) {
+		int old = dberr;
+		db_once(rollback);
+		dberr = old; // or would sqlite itself defer the real error to rollback? XXX
+	} else {
+		db_once(commit);
+	}
+	db_once(begin);
 }
 	
 void db_close(void) {
+	if(in_transaction) {
+		if(dberr) {
+			db_once(rollback);
+		} else {
+			db_once(commit);
+		}
+	}
+			
 	sqlite3_finalize(begin);
 	sqlite3_finalize(commit);
 	
