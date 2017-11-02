@@ -4,7 +4,7 @@
 
 typedef sqlite3_int64 ident;
 
-sqlite3* db_init(void);
+sqlite3* db_init(const char* path);
 void db_begin(void);
 void db_commit(void);
 void db_retransaction(void);
@@ -28,7 +28,10 @@ extern int dberr;
 #define db_exec(st) db_execn(st.s,st.l)
 int db_execn(const char* s, size_t l);
 
-typedef bool (*result_handler)(int res, int n, sqlite3_stmt* stmt, const char* tail, size_t sl, size_t l);
+#define RESULT_HANDLER(name) \
+	bool name(int res, int n, sqlite3_stmt* stmt, const char* tail, size_t sl, size_t l)
+
+typedef RESULT_HANDLER((*result_handler));
 
 extern result_handler default_result_handler;
 
