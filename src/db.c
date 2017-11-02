@@ -59,7 +59,7 @@ int db_check(int res)
  
 sqlite3_stmt *begin, *commit;
 
-sqlite3* db_init() {
+void db_init() {
 	//chdir(getenv("FILEDB"));
 	assert(SQLITE_OK == sqlite3_open_v2("media.sqlite", &c,																			
 																		SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
@@ -75,8 +75,7 @@ sqlite3* db_init() {
 															 &commit,
 															 NULL));
 	DB_OK;
-
-	return c;
+	return;
 }
 
 void db_once(sqlite3_stmt* stmt) {
