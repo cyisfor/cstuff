@@ -8,7 +8,7 @@ sqlite3* db_init(const char* path);
 void db_close(void);
 
 // this is just to be easier to read...
-#define BIND(type,stmt,column,...) sqlite3_bind_ ## type(stmt, column, ## __VA_ARGS)
+#define BIND(type,stmt,column,...) sqlite3_bind_ ## type(stmt, column, ## __VA_ARGS__)
 
 #ifdef DEBUG
 #define db_check(res) db_checkderp(res,__FILE__,__LINE__)

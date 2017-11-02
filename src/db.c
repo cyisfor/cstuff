@@ -241,7 +241,7 @@ bool db_has_tablen(const char* table, size_t n) {
 	static sqlite3_stmt	*has_table = NULL;
 	if(!has_table) {
 		has_table = db_prepare(
-			"SELECT name FROM mem.sqlite_master WHERE type='table' AND name=?");
+			"SELECT name FROM sqlite_master WHERE type='table' AND name=?");
 	}
 	sqlite3_bind_text(has_table,1,table,n,NULL);
 	// can't use db_once because we expect SQLITE_ROW
