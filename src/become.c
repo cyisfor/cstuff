@@ -1,8 +1,13 @@
+#define _GNU_SOURCE // futimens
 #include "become.h"
+#include <sys/stat.h> // futimens
+#include <unistd.h> // fsync
+#include <stdlib.h> // calloc, malloc, free, abort
+#include <string.h> // strlen, memcpy
+
 
 struct becomer* become_start(const char* destname) {
-	struct becomer* b = malloc(sizeof(struct becomer));
-	b->got_times = false;
+	struct becomer* b = calloc(1,sizeof(struct becomer));
 	b->destname = destname;
 	/* don't bother saving this, since the kernel is retarded about
 		 strings. */
@@ -28,11 +33,9 @@ void become_commit(struct becomer** bb) {
 	if(0 != fsync(fileno(b->out))) abort();
 	if(0 != rename(b->tempname, b->destname)) abort();
 	free(b->tempname);
-	if(b->got_modified) {
+	if(b->got_times) {
 		futimens(fileno(b->out), b->times);
 	}
 	fclose(b->out);
 	free(b);
 }
-	
-	

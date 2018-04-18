@@ -1,5 +1,6 @@
 #include <time.h> // struct timespec
 #include <stdbool.h>
+#include <stdio.h> // FILE*
 
 struct becomer {
 	FILE* out;
