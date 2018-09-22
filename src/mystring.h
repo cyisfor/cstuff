@@ -89,6 +89,8 @@ void strrewind(bstring* st) {
 
 static
 void strclear(bstring* st) {
+	// can cheat, by setting ->s to static and ->space to 0
+	if(st->space == 0) return;
 	free(st->s);
 	st->s = NULL;
 	st->l = 0;
