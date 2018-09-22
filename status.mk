@@ -8,5 +8,5 @@ statusPrefix=$(shell echo -e '\x1b[$(statusColor)m')
 statusMidfix=$(shell echo -e '\x1b[$(statusMidColor)m')  
 statusSuffix=  $(shell echo -e '\x1b[0m')
 
-test:
+derptest:
 	$(call status, test this thing)
