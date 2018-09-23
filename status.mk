@@ -1,4 +1,6 @@
+ifeq ($(status),)
 $(file > make-status.log)
+endif
 status=$(info $(statusPrefix)STATUS$(statusMidfix)$(1)$(2)$(3)$(statusSuffix))$(file >> make-status.log, $(1) $(2) $(3))
 # https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
 statusColor=1;34;48
