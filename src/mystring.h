@@ -34,6 +34,30 @@ typedef struct ownablestring {
 	// note, can't be cast to/from a bstring!
 } ownablestring;
 
+static ownablestring ownable_zstring(const string str) {
+	ownablestring ret = str;
+	if(str.s[str.l-1] == '\0') {
+		ret.owned = false;
+	} else {
+		ret.s = malloc(str.l+1);
+		memcpy(ret.s,str.s,str.l);
+		ret.s[str.l] = '\0';
+		ret.l = str.l+1;
+		ret.owned = true;
+	}
+	return ret;
+}
+
+static void ownable_string_free(ownablestring* str) {
+	if(str->owned) return;
+	const char* s = str->s;
+	str->s = NULL;
+	str->l = 0;
+	str->owned = false;
+	free(s);
+}
+		
+
 #define CSTRING(str) (*((const string*)&str)) // any kind of string
 #define STRING(str) (*((string*)&str)) // any kind of string, but may segfault
 
