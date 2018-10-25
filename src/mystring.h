@@ -35,16 +35,32 @@ typedef struct ownablestring {
 } ownablestring;
 
 static ownablestring ownable_zstring(const string str) {
-	ownablestring ret = str;
+	ownablestring ret = {};
 	if(str.s[str.l-1] == '\0') {
+		ret.s = str.s;
+		ret.l = str.l;
 		ret.owned = false;
 	} else {
-		ret.s = malloc(str.l+1);
-		memcpy(ret.s,str.s,str.l);
-		ret.s[str.l] = '\0';
+		char* copy = malloc(str.l+1);
+		memcpy(copy,str.s,str.l);
+		copy[str.l] = '\0';
+		ret.s = copy;
 		ret.l = str.l+1;
 		ret.owned = true;
 	}
+	return ret;
+}
+
+static ownablestring own_string(ownablestring str) {
+	if(str.owned) {
+		return str;
+	}
+	ownablestring ret = {
+		.s = malloc(str.l),
+		.l = str.l,
+		.owned = true
+	};
+	memcpy(ret.s,str.s,str.l);
 	return ret;
 }
 
@@ -54,7 +70,7 @@ static void ownable_string_free(ownablestring* str) {
 	str->s = NULL;
 	str->l = 0;
 	str->owned = false;
-	free(s);
+	free((char*)s);
 }
 		
 
