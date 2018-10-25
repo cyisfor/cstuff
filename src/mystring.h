@@ -55,13 +55,13 @@ static ownablestring own_string(ownablestring str) {
 	if(str.owned) {
 		return str;
 	}
-	ownablestring ret = {
-		.s = malloc(str.l),
+	char* buf = malloc(str.l);
+	memcpy(buf,str.s,str.l);
+	return ((ownablestring) {
+		.s = buf,
 		.l = str.l,
 		.owned = true
-	};
-	memcpy(ret.s,str.s,str.l);
-	return ret;
+	});
 }
 
 static void ownable_string_free(ownablestring* str) {
@@ -88,22 +88,23 @@ static void ownable_string_free(ownablestring* str) {
 	}
 	void bar(ownablestring str) {
 	  foo(str);
-		str.owned = false;
+		ownable_string_disown(str); or str.owned = false;
+		ownable_string_free(str); // won't screw up g.thing
+	}
+
+	doing disown isn't needed for a temporary ownablestring that will
+	never be freed i.e. OSTRING(str)
 */
 		
 
 #define CSTRING(str) (*((const string*)&str)) // any kind of string
 #define STRING(str) (*((string*)&str)) // any kind of string, but may segfault
-
+#define OSTRING(str) ((ownablestring){ .s = str.s, .l = str.l, .owned = false })
 static
 bstring bstringstr(const char* s, size_t n) {
-	bstring ret = {
-		.s = malloc(n),
-		.l = n,
-		.space = n
-	};
-	memcpy(ret.s,s,n);
-	return ret;
+	char* buf = malloc(n);
+	memcpy(buf,s,n);
+	return ((bstring) { .s = buf, .l = n, .space = n });
 }
 
 #define bstringlit(lit) bstringstr(LITLEN(lit))
