@@ -72,6 +72,24 @@ static void ownable_string_free(ownablestring* str) {
 	str->owned = false;
 	free((char*)s);
 }
+
+#define ownable_string_disown(str) str.owned = false
+
+/*
+	Because llvm sucks, and rust sucks.
+
+	pass around ownable copies of memory blocks
+	copy memory when ownership is needed
+	if you pass an ownable string to a function which saves the string globally,
+	  unset ownership in the parent.
+
+	void foo(ownablestring str) {
+	  g.thing = own_string(str);
+	}
+	void bar(ownablestring str) {
+	  foo(str);
+		str.owned = false;
+*/
 		
 
 #define CSTRING(str) (*((const string*)&str)) // any kind of string
