@@ -1,5 +1,5 @@
-#ifndef _MYSTRING_H_
-#define _MYSTRING_H_
+#ifndef _OWNABLE_STRING_H_
+#define _OWNABLE_STRING_H_
 
 #include <string.h> // memcpy
 #include <stdio.h> // snprintf
@@ -9,13 +9,15 @@
 #define LITSIZ(a) (sizeof(a)-1)
 #define LITLEN(a) a, LITSIZ(a)
 
-#ifndef namespace
-#define namespace ownable_
+#ifndef N
+#  ifndef namespace
+#  define namespace ownable_
+#  endif
+
+#  include "concatsym.h"
+
+#  define N(a) CONCATSYM(namespace,a)
 #endif
-
-#include "concatsym.h"
-
-#define N(a) CONCATSYM(namespace,a)
 
 typedef struct N(string) {
 	const char* s;
@@ -40,8 +42,9 @@ static N(string) N(zstring)(const N(string) str) {
 	return ret;
 }
 
-static ownablestring own_string(ownablestring str) {
-	if(str.owned) {
+static N(string) N(use)(N(string)* str) {
+	
+	if(str->owned) {
 		return str;
 	}
 	char* buf = malloc(str.l);
