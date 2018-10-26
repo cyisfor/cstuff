@@ -75,7 +75,7 @@ static N(string) N(take)(N(string)* str) {
 }
 
 static N(string) N(copy)(const N(string) str) {
-	N(str) ret = str;
+	N(string) ret = str;
 	if(ret.state == N(FREEABLE)) {
 		ret.state = N(TRANSIENT);
 	}
