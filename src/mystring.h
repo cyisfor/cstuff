@@ -27,79 +27,10 @@ typedef struct bstring {
 	size_t space;
 } bstring;
 
-typedef struct ownablestring {
-	const char* s;
-	size_t l;
-	bool owned; // s is owned by us.
-	// note, can't be cast to/from a bstring!
-} ownablestring;
-
-static ownablestring ownable_zstring(const string str) {
-	ownablestring ret = {};
-	if(str.s[str.l-1] == '\0') {
-		ret.s = str.s;
-		ret.l = str.l;
-		ret.owned = false;
-	} else {
-		char* copy = malloc(str.l+1);
-		memcpy(copy,str.s,str.l);
-		copy[str.l] = '\0';
-		ret.s = copy;
-		ret.l = str.l+1;
-		ret.owned = true;
-	}
-	return ret;
-}
-
-static ownablestring own_string(ownablestring str) {
-	if(str.owned) {
-		return str;
-	}
-	char* buf = malloc(str.l);
-	memcpy(buf,str.s,str.l);
-	return ((ownablestring) {
-		.s = buf,
-		.l = str.l,
-		.owned = true
-	});
-}
-
-static void ownable_string_free(ownablestring* str) {
-	if(str->owned) return;
-	const char* s = str->s;
-	str->s = NULL;
-	str->l = 0;
-	str->owned = false;
-	free((char*)s);
-}
-
-#define ownable_string_disown(str) str.owned = false
-
-/*
-	Because llvm sucks, and rust sucks.
-
-	pass around ownable copies of memory blocks
-	copy memory when ownership is needed
-	if you pass an ownable string to a function which saves the string globally,
-	  unset ownership in the parent.
-
-	void foo(ownablestring str) {
-	  g.thing = own_string(str);
-	}
-	void bar(ownablestring str) {
-	  foo(str);
-		ownable_string_disown(str); or str.owned = false;
-		ownable_string_free(str); // won't screw up g.thing
-	}
-
-	doing disown isn't needed for a temporary ownablestring that will
-	never be freed i.e. OSTRING(str)
-*/
-		
 
 #define CSTRING(str) (*((const string*)&str)) // any kind of string
 #define STRING(str) (*((string*)&str)) // any kind of string, but may segfault
-#define OSTRING(str) ((ownablestring){ .s = str.s, .l = str.l, .owned = false })
+
 static
 bstring bstringstr(const char* s, size_t n) {
 	char* buf = malloc(n);

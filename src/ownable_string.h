@@ -13,9 +13,6 @@
 #include <stdlib.h> // malloc
 #include <stdbool.h>
 
-#define LITSIZ(a) (sizeof(a)-1)
-#define LITLEN(a) a, LITSIZ(a)
-
 #ifndef N
 // "#define namespace" to have no namespace (i.e. string)
 #  ifndef namespace
@@ -90,8 +87,7 @@ static void N(clear)(N(string)* str) {
 	str->state = N(CONSTANT);
 }
 
-
-
+/* so like
 
 void foo(void) {
 	ownable_string bar1 = {
@@ -103,77 +99,28 @@ void foo(void) {
 		.l = 5,
 		.state = N(FREEABLE)
 	};
-	ownable_string bar3 = 
-	foobar(bar);
-	ownable_string_clear(&bar);
+	ownable_string bar3 = ownable_copy(bar2);
+	foobar(bar1,&bar2,bar3);
+	assert(bar2.s == NULL);
+	ownable_string_clear(&bar1);
+	ownable_string_clear(&bar3);
+	// we must not free bar2.s until all transient copies are unused
+	// since foobar saves an ownable_copy without ownable_ensure,
+	// we can "never" ownable_string_clear(&bar2); until..
+
+	ownable_string_clear(&g.bar3);
+	ownable_string_clear(&bar2);
 }
 
-void foobar(ownable_string bar) {
-	ownable_string foobar = ownable_ensure(bar);
-	g.foobar = foobar;
+void foobar(ownable_string bar1, ownable_string* bar2, ownable_string bar3) {
+	g.bar1 = ownable_ensure(bar1);
+	g.bar2 = ownable_take(bar2);
+	g.bar3 = ownable_copy(bar3);
+	
 	...
 }
-/* so like
- */
 
-#define CSTRING(str) (*((const string*)&str)) // any kind of string
-#define STRING(str) (*((string*)&str)) // any kind of string, but may segfault
-#define OSTRING(str) ((ownablestring){ .s = str.s, .l = str.l, .owned = false })
-static
-bstring bstringstr(const char* s, size_t n) {
-	char* buf = malloc(n);
-	memcpy(buf,s,n);
-	return ((bstring) { .s = buf, .l = n, .space = n });
-}
-
-#define bstringlit(lit) bstringstr(LITLEN(lit))
-
-#define BLOCK_SIZE 0x200
-
-static
-void strgrow(bstring* st, size_t newmin) {
-	st->space = (st->space * 3)>>1;
-	if(st->space < newmin)
-		st->space = newmin;
-	st->s = realloc(st->s, st->space);
-}
-
-static
-void strreserve(bstring* st, size_t n) {
-	// could say st.space = pow(1.5,log(st.l+n)/(log(3)-log(2))+1)
-	// but that seems like a lot of expensive math calls, when the loop'll only happen like 4 times max
-	while(st->l + n > st->space) strgrow(st,st->l+n);
-}
-
-static
-void straddn(bstring* st, const char* c, size_t n) {
-	strreserve(st, n);
-	memcpy(st->s + st->l, c, n);
-	st->l += n;
-}
-
-#define stradd(st,lit) straddn(st,lit,sizeof(lit)-1)
-
-static
-void straddint(bstring* st, int i) {
-	strreserve(st,0x10);
-	st->l += snprintf(st->s + st->l, 0x10, "%x",i);
-}
-
-static
-void strrewind(bstring* st) {
-	st->l = 0;
-}
-
-static
-void strclear(bstring* st) {
-	free(st->s);
-	st->s = NULL;
-	st->l = 0;
-	st->space = 0;
-}
-
-#define STRANDLEN(st) st.s, st.l
+*/
 
 #ifdef namespace
 #undef namespace
