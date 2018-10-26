@@ -1,6 +1,13 @@
 #ifndef _OWNABLE_STRING_H_
 #define _OWNABLE_STRING_H_
 
+/*
+	Because llvm sucks, and rust sucks.
+
+	pass around freeable copies of memory blocks
+	memdup when permanence is needed
+*/
+
 #include <string.h> // memcpy
 #include <stdio.h> // snprintf
 #include <stdlib.h> // malloc
@@ -10,6 +17,7 @@
 #define LITLEN(a) a, LITSIZ(a)
 
 #ifndef N
+// "#define namespace" to have no namespace (i.e. string)
 #  ifndef namespace
 #  define namespace ownable_
 #  endif
@@ -19,75 +27,94 @@
 #  define N(a) CONCATSYM(namespace,a)
 #endif
 
+enum N(state) { N(CONSTANT), N(TRANSIENT), N(FREEABLE) };
+
 typedef struct N(string) {
 	const char* s;
 	size_t l;
-	bool owned; // s is owned by us.
+	enum N(state) state;
 } N(string);
 
 static N(string) N(zstring)(const N(string) str) {
-	N(string) ret = {};
 	if(str.s[str.l-1] == '\0') {
-		ret.s = str.s;
-		ret.l = str.l;
-		ret.owned = false;
-	} else {
-		char* copy = malloc(str.l+1);
-		memcpy(copy,str.s,str.l);
-		copy[str.l] = '\0';
-		ret.s = copy;
-		ret.l = str.l+1;
-		ret.owned = true;
+		N(string) ret = str;
+		if(ret.state = N(FREEABLE))
+			ret.state = N(TRANSIENT);
+		return ret;
+			
+	} 
+	N(string) ret;
+	char* copy = malloc(str.l+1);
+	memcpy(copy,str.s,str.l);
+	copy[str.l] = '\0';
+	ret.s = copy;
+	ret.l = str.l+1;
+	ret.state = N(FREEABLE);
+	return ret;
+}
+
+static N(string) N(take)(N(string)* str) {
+	N(string) ret = *src;
+	str->s = NULL;
+	str->l = 0;
+	str->state = N(CONSTANT);
+	return ret;
+}
+
+static N(string) N(copy)(N(string) str) {
+	N(str) ret = str;
+	if(ret.state == N(FREEABLE)) {
+		ret.state = N(TRANSIENT);
 	}
 	return ret;
 }
 
-static N(string) N(use)(N(string)* str) {
+static N(string) N(ensure)(N(string) str) {
+	if(str.state != N(TRANSIENT)) return str;
 	
-	if(str->owned) {
-		return str;
-	}
 	char* buf = malloc(str.l);
 	memcpy(buf,str.s,str.l);
-	return ((ownablestring) {
+	return ((N(string)) {
 		.s = buf,
 		.l = str.l,
-		.owned = true
+		.state = N(FREEABLE)
 	});
 }
 
-static void ownable_string_free(ownablestring* str) {
-	if(str->owned) return;
-	const char* s = str->s;
+static void N(clear)(N(string)* str) {
+	if(str->state == N(FREEABLE)) {
+		free(str->s);
+	}
 	str->s = NULL;
 	str->l = 0;
-	str->owned = false;
-	free((char*)s);
+	str->state = N(CONSTANT);
 }
 
-#define ownable_string_disown(str) str.owned = false
 
-/*
-	Because llvm sucks, and rust sucks.
 
-	pass around ownable copies of memory blocks
-	copy memory when ownership is needed
-	if you pass an ownable string to a function which saves the string globally,
-	  unset ownership in the parent.
 
-	void foo(ownablestring str) {
-	  g.thing = own_string(str);
-	}
-	void bar(ownablestring str) {
-	  foo(str);
-		ownable_string_disown(str); or str.owned = false;
-		ownable_string_free(str); // won't screw up g.thing
-	}
+void foo(void) {
+	ownable_string bar1 = {
+		.s = "unownable string",
+		.l = 23,
+		.state = N(CONSTANT)
+	}, bar2 = {
+		.s = strdup("derp"),
+		.l = 5,
+		.state = N(FREEABLE)
+	};
+	ownable_string bar3 = 
+	foobar(bar);
+	ownable_string_clear(&bar);
+}
 
-	doing disown isn't needed for a temporary ownablestring that will
-	never be freed i.e. OSTRING(str)
-*/
-		
+void foobar(ownable_string bar) {
+	ownable_string foobar = ownable_ensure(bar);
+	g.foobar = foobar;
+	...
+}
+/* so like
+ */
 
 #define CSTRING(str) (*((const string*)&str)) // any kind of string
 #define STRING(str) (*((string*)&str)) // any kind of string, but may segfault
@@ -148,5 +175,7 @@ void strclear(bstring* st) {
 
 #define STRANDLEN(st) st.s, st.l
 
-//#undef string ehh... but in code that uses this we don't wanna specify "ownablestring"
+#ifdef namespace
+#undef namespace
+#endif
 #endif /* _MYSTRING_H_ */
