@@ -52,13 +52,16 @@ static N(string) N(zstring)(const N(string) str) {
 
 static N(string) N(take)(N(string)* str) {
 	N(string) ret = *src;
+	if(ret.state == N(TRANSIENT)) {
+		ret = N(ensure)(ret);
+	}
 	str->s = NULL;
 	str->l = 0;
 	str->state = N(CONSTANT);
 	return ret;
 }
 
-static N(string) N(copy)(N(string) str) {
+static N(string) N(copy)(const N(string) str) {
 	N(str) ret = str;
 	if(ret.state == N(FREEABLE)) {
 		ret.state = N(TRANSIENT);
@@ -66,7 +69,7 @@ static N(string) N(copy)(N(string) str) {
 	return ret;
 }
 
-static N(string) N(ensure)(N(string) str) {
+static N(string) N(ensure)(const N(string) str) {
 	if(str.state != N(TRANSIENT)) return str;
 	
 	char* buf = malloc(str.l);
@@ -85,6 +88,17 @@ static void N(clear)(N(string)* str) {
 	str->s = NULL;
 	str->l = 0;
 	str->state = N(CONSTANT);
+}
+
+static void N(replace)(N(string)* dest, const N(string) src) {
+	if(dest->state == N(FREEABLE)) {
+		dest->s = realloc(dest->s, src.l);
+	} else {
+		dest->state = N(FREEABLE);
+		dest->s = malloc(src.l);
+	}
+	memcpy(dest->s, src.s, src.l);
+	dest->l = src.l;
 }
 
 /* so like
