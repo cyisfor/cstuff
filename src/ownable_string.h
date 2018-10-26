@@ -50,8 +50,21 @@ static N(string) N(zstring)(const N(string) str) {
 	return ret;
 }
 
+
+static N(string) N(ensure)(const N(string) str) {
+	if(str.state != N(TRANSIENT)) return str;
+	
+	char* buf = malloc(str.l);
+	memcpy(buf,str.s,str.l);
+	return ((N(string)) {
+		.s = buf,
+		.l = str.l,
+		.state = N(FREEABLE)
+	});
+}
+
 static N(string) N(take)(N(string)* str) {
-	N(string) ret = *src;
+	N(string) ret = *str;
 	if(ret.state == N(TRANSIENT)) {
 		ret = N(ensure)(ret);
 	}
@@ -69,21 +82,9 @@ static N(string) N(copy)(const N(string) str) {
 	return ret;
 }
 
-static N(string) N(ensure)(const N(string) str) {
-	if(str.state != N(TRANSIENT)) return str;
-	
-	char* buf = malloc(str.l);
-	memcpy(buf,str.s,str.l);
-	return ((N(string)) {
-		.s = buf,
-		.l = str.l,
-		.state = N(FREEABLE)
-	});
-}
-
 static void N(clear)(N(string)* str) {
 	if(str->state == N(FREEABLE)) {
-		free(str->s);
+		free((char*)str->s);
 	}
 	str->s = NULL;
 	str->l = 0;
@@ -91,13 +92,17 @@ static void N(clear)(N(string)* str) {
 }
 
 static void N(replace)(N(string)* dest, const N(string) src) {
-	if(dest->state == N(FREEABLE)) {
-		dest->s = realloc(dest->s, src.l);
-	} else {
-		dest->state = N(FREEABLE);
-		dest->s = malloc(src.l);
+	if(dest->s != src.s) { // XXX: will this screw things up sometimes?
+		char* destbuf;
+		if(dest->state == N(FREEABLE)) {
+			destbuf = realloc((char*)dest->s, src.l);
+		} else {
+			dest->state = N(FREEABLE);
+			destbuf = malloc(src.l);
+		}
+		memcpy(destbuf, src.s, src.l);
+		dest->s = destbuf;
 	}
-	memcpy(dest->s, src.s, src.l);
 	dest->l = src.l;
 }
 
