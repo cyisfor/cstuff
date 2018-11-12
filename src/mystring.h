@@ -27,25 +27,15 @@ typedef struct bstring {
 	size_t space;
 } bstring;
 
-typedef struct ownablestring {
-	const char* s;
-	size_t l;
-	bool owned; // s is owned by us.
-	// note, can't be cast to/from a bstring!
-} ownablestring;
 
 #define CSTRING(str) (*((const string*)&str)) // any kind of string
 #define STRING(str) (*((string*)&str)) // any kind of string, but may segfault
 
 static
 bstring bstringstr(const char* s, size_t n) {
-	bstring ret = {
-		.s = malloc(n),
-		.l = n,
-		.space = n
-	};
-	memcpy(ret.s,s,n);
-	return ret;
+	char* buf = malloc(n);
+	memcpy(buf,s,n);
+	return ((bstring) { .s = buf, .l = n, .space = n });
 }
 
 #define bstringlit(lit) bstringstr(LITLEN(lit))
