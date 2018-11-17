@@ -8,7 +8,10 @@
 
 void* mmapfd(int fd, size_t* osize) {	 
 	 struct stat st;
-	 assert(0 == fstat(fd, &st));
+	 if(0 != fstat(fd, &st)) {
+		 close(fd);
+		 return NULL;
+	 }
 	 void* b = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
 	 assert(b != MAP_FAILED);
 	 close(fd);
