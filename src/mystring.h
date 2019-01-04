@@ -36,7 +36,7 @@ typedef struct ownablestring {
 
 #define CSTRING(str) (*((const string*)&str)) // any kind of string
 #define STRING(str) (*((string*)&str)) // any kind of string, but may segfault
-
+#define LITSTR(lit) {.s = lit, .l = LITSIZ(lit)}
 static
 bstring bstringstr(const char* s, size_t n) {
 	bstring ret = {
