@@ -30,12 +30,17 @@ typedef struct bstring {
 
 #define CSTRING(str) (*((const string*)&str)) // any kind of string
 #define STRING(str) (*((string*)&str)) // any kind of string, but may segfault
-#define LITSTR(lit) {.s = lit, .l = LITSIZ(lit)}
+#define LITSTR(lit) (string){.s = lit, .l = LITSIZ(lit)}
 static
 bstring bstringstr(const char* s, size_t n) {
 	char* buf = malloc(n);
 	memcpy(buf,s,n);
 	return ((bstring) { .s = buf, .l = n, .space = n });
+}
+
+static string strlenstr(const char* s) {
+	size_t n = strlen(s);
+	return (string) { .s = s, .l = n};
 }
 
 #define bstringlit(lit) bstringstr(LITLEN(lit))
@@ -88,6 +93,5 @@ void strclear(bstring* st) {
 }
 
 #define STRANDLEN(st) st.s, st.l
-
 
 #endif /* _MYSTRING_H_ */
