@@ -11,7 +11,7 @@
 	void foo(ownable_string bar) { ... } foo(baz);
 	unless you're sure it's either transient or constant. The copy passed to foo
 	should be implicitly made transient, if the parent one is freeable.
-	how to do this: foo(ownable_string_copy(baz));
+	how to do this: foo(ownable_copy(baz));
 
 	If you avoid struct copying though, you can transfer ownership, and
 	avoid transient strings entirely.
@@ -79,26 +79,21 @@ static void N(nullendify)(const N(string)* str) {
 	str->l += 1;
 }
 
-static N(string) N(ensure)(const N(string) str) {
+static void N(ensure)(const N(string)* str) {
 	/* ensure we do not have a transient string, so return one that's either
 		 freeable, constant, or a freeably copy of the transient one.
 		 */
-	if(str.state != N(TRANSIENT)) return str;
-	
-	char* buf = malloc(str.l);
-	memcpy(buf,str.s,str.l);
-	return ((N(string)) {
-		.s = buf,
-		.l = str.l,
-		.state = N(FREEABLE)
-	});
+	if(str->state != N(TRANSIENT)) return;
+
+	char* buf = malloc(str->l);
+	memcpy(buf,str->s,str->l);
+	str->s = buf;
+	str->state = N(FREEABLE);
 }
 
 static N(string) N(take)(N(string)* str) {
+	N(ensure)(str);
 	N(string) ret = *str;
-	if(ret.state == N(TRANSIENT)) {
-		ret = N(ensure)(ret);
-	}
 	str->s = NULL;
 	str->l = 0;
 	str->state = N(CONSTANT);
@@ -152,20 +147,18 @@ void foo(void) {
 	ownable_string bar3 = ownable_copy(bar2);
 	foobar(bar1,&bar2,bar3);
 	assert(bar2.s == NULL);
-	ownable_string_clear(&bar1);
-	ownable_string_clear(&bar3);
-	// we must not free bar2.s until all transient copies are unused
-	// since foobar saves an ownable_copy without ownable_ensure,
-	// we can "never" ownable_string_clear(&bar2); until..
+	ownable_clear(&bar1);
+	ownable_clear(&bar3);
 
-	ownable_string_clear(&g.bar3);
-	ownable_string_clear(&bar2);
+	ownable_clear(&g.bar2);
 }
 
 void foobar(ownable_string bar1, ownable_string* bar2, ownable_string bar3) {
-	g.bar1 = ownable_ensure(bar1);
+	g.bar1 = ownable_copy(bar1);
+	ownable_ensure(&g.bar1);
 	g.bar2 = ownable_take(bar2);
 	g.bar3 = ownable_copy(bar3);
+	ownable_ensure(&g.bar3);
 	
 	...
 }
