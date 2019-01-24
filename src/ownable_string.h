@@ -56,25 +56,33 @@ typedef struct N(string) {
 	enum N(state) state;
 } N(string);
 
-static N(string) N(zstring)(const N(string) str) {
-	if(str.s[str.l-1] == '\0') {
-		N(string) ret = str;
-		if(ret.state == N(FREEABLE))
-			ret.state = N(TRANSIENT);
-		return ret;
-			
-	} 
-	N(string) ret;
-	char* copy = malloc(str.l+1);
-	memcpy(copy,str.s,str.l);
+static void N(nullendify)(const N(string)* str) {
+	/* Convert a string to be null terminated, reallocing if necessary  */
+	if(str->s[str->l-1] == '\0') {
+		return;			
+	}
+	// we need to make a copy of it regardless, to make room for the \0
+	char* copy;
+	if(str->state == N(FREEABLE)) {
+		// WARNING: this will make any transient strings of this one point to
+		// freed memory!
+		copy = realloc(str->s, str->l+1);
+	} else {
+		copy = malloc(str->l+1);
+		memcpy(copy,str.s,str.l);
+	}
 	copy[str.l] = '\0';
-	ret.s = copy;
-	ret.l = str.l+1;
-	ret.state = N(FREEABLE);
-	return ret;
+	if(str->state == N(FREEABLE)) {
+		free(str->s);
+	}
+	str->s = copy;
+	str->l += 1;
 }
 
 static N(string) N(ensure)(const N(string) str) {
+	/* ensure we do not have a transient string, so return one that's either
+		 freeable, constant, or a freeably copy of the transient one.
+		 */
 	if(str.state != N(TRANSIENT)) return str;
 	
 	char* buf = malloc(str.l);
