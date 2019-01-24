@@ -8,13 +8,24 @@
 	memdup when permanence is needed
 
 	Try to avoid struct copying this i.e.
-	void foo(struct ownable_string bar) { ... } foo(baz);
+	void foo(ownable_string bar) { ... } foo(baz);
 	unless you're sure it's either transient or constant. The copy passed to foo
-	should be implicitly made transient, if the parent one is owned.
+	should be implicitly made transient, if the parent one is freeable.
 	how to do this: foo(ownable_string_copy(baz));
 
-	If you avoid struct copying though, you can auto-transfer ownership, and
+	If you avoid struct copying though, you can transfer ownership, and
 	avoid transient strings entirely.
+	i.e.
+	void foo(ownable_string* bar);
+
+	To save a transient string, you have to strdup a copy of it, that's now
+	freeable. So if you insist on struct copying, you'll have an freeable string,
+	then downgrade it to transient to pass it by value, then save that transient
+	string creating a second freeable string, then deallocating the first.
+	
+	Without struct copying, you have an freeable string, pass its address, and
+	now the string is NULL in the parent, and the one saved didn't have to malloc
+	anything.
 */
 
 #include <string.h> // memcpy
