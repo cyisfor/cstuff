@@ -6,6 +6,15 @@
 
 	pass around freeable copies of memory blocks
 	memdup when permanence is needed
+
+	Try to avoid struct copying this i.e.
+	void foo(struct ownable_string bar) { ... } foo(baz);
+	unless you're sure it's either transient or constant. The copy passed to foo
+	should be implicitly made transient, if the parent one is owned.
+	how to do this: foo(ownable_string_copy(baz));
+
+	If you avoid struct copying though, you can auto-transfer ownership, and
+	avoid transient strings entirely.
 */
 
 #include <string.h> // memcpy
@@ -24,7 +33,11 @@
 #  define N(a) CONCATSYM(namespace,a)
 #endif
 
-enum N(state) { N(CONSTANT), N(TRANSIENT), N(FREEABLE) };
+enum N(state) {
+	N(CONSTANT), // we know the string will never be freed
+		N(TRANSIENT), // we have to make sure it isn't freed elsewhere
+		N(FREEABLE) // we can free it here, and it's not used elsewhere.
+		};
 
 typedef struct N(string) {
 	const char* s;
@@ -35,7 +48,7 @@ typedef struct N(string) {
 static N(string) N(zstring)(const N(string) str) {
 	if(str.s[str.l-1] == '\0') {
 		N(string) ret = str;
-		if(ret.state = N(FREEABLE))
+		if(ret.state == N(FREEABLE))
 			ret.state = N(TRANSIENT);
 		return ret;
 			
@@ -49,7 +62,6 @@ static N(string) N(zstring)(const N(string) str) {
 	ret.state = N(FREEABLE);
 	return ret;
 }
-
 
 static N(string) N(ensure)(const N(string) str) {
 	if(str.state != N(TRANSIENT)) return str;
