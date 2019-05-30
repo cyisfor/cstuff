@@ -21,7 +21,9 @@ void* mmapfd(int fd, size_t* osize) {
 
 void* mmapfile(const char* path, size_t* osize) {
 	 int fd = open(path, O_RDONLY);
-	 assert(fd >= 0);
+	 if(fd < 0) {
+		 return NULL;
+	 }
 	 void* ret = mmapfd(fd, osize);
 	 close(fd);
 	 return ret;
