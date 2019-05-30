@@ -94,7 +94,7 @@ void strclear(bstring* st) {
 }
 
 static
-const char ZSTR(const string st) {
+const char* ZSTR(const string st) {
 	static char* buf = NULL;
 	if(st.base[st.len-1] == 0) return st.base;
 	buf = realloc(buf, st.len+1);
