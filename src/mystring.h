@@ -93,6 +93,16 @@ void strclear(bstring* st) {
 	st->space = 0;
 }
 
+static
+const char ZSTR(const string st) {
+	static char* buf = NULL;
+	if(st.base[st.len-1] == 0) return st.base;
+	buf = realloc(buf, st.len+1);
+	memcpy(buf, st.base, st.len);
+	buf[st.len] = 0;
+	return buf;
+}
+
 #define STRANDLEN(st) st.base, st.len
 
 #endif /* _MYSTRING_H_ */
