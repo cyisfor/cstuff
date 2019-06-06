@@ -12,10 +12,12 @@ void* mmapfd(int fd, size_t* osize) {
 		 close(fd);
 		 return NULL;
 	 }
-	 void* b = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-	 assert(b != MAP_FAILED);
-	 close(fd);
 	 *osize = st.st_size;
+	 void* b = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+	 if(b == MAP_FAILED) {
+		 return NULL;
+	 }
+	 close(fd);
 	 return b;
 }
 
