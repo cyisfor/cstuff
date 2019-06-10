@@ -31,7 +31,7 @@ typedef struct bstring {
 
 #define CSTRING(str) (*((const string*)&str)) // any kind of string
 #define STRING(str) (*((string*)&str)) // any kind of string, but may segfault
-#define LITSTR(lit) (string){.base = lit, .len = LITSIZ(lit)}
+#define LITSTR(lit) (const string){.base = lit, .len = LITSIZ(lit)}
 static
 bstring bstringstr(const char* str, size_t len) {
 	char* buf = malloc(len);
