@@ -1,34 +1,33 @@
 cmake_minimum_required(VERSION 3.14)
 project(cstuff VERSION 0.1)
 
-function(add_cstuff)
+file(WRITE "${CMAKE_BINARY_DIR}/cmakesucks.c" "")
+add_library(cstuff "${CMAKE_BINARY_DIR}/cmakesucks.c")
+target_include_directories(cstuff PUBLIC
+  "${CMAKE_CURRENT_SOURCE_DIR}")
+
+macro(add_cstuff)
   set(options db itoa mmapfile pat)
   cmake_parse_arguments(PARSE_ARGV 0 want "${options}" "" "")
-
-  file(WRITE "${CMAKE_BINARY_DIR}/cmakesucks.c" "")
-  add_library(cstuff "${CMAKE_BINARY_DIR}cmakesucks.c")
-
-  target_include_directories(cstuff PUBLIC
-	"${CMAKE_CURRENT_SOURCE_DIR}")
 
   include(FindPkgConfig)
   include(CheckSymbolExists)
 
   if(want_db)
 	set(want_mmapfile 1)
-	target_sources(cstuff db.c mmapfile.c)
+	target_sources(cstuff PUBLIC db.c mmapfile.c)
 	pkg_check_modules(SQLITE
 	  REQUIRED IMPORTED_TARGET
 	  sqlite3)
 	target_link_libraries(cstuff PUBLIC PkgConfig::SQLITE)
   endif(want_db)
   if(want_itoa)
-	target_sources(cstuff itoa.c)
+	target_sources(cstuff PUBLIC itoa.c)
   endif(want_itoa)
   if(want_mmapfile)
 	check_symbol_exists(mmap "sys/mman.h" HAVE_MMAP)
 	if(HAVE_MMAP)
-	  target_sources(cstuff mmapfile.c)
+	  target_sources(cstuff PUBLIC mmapfile.c)
 	else(HAVE_MMAP)
 	  message(FATAL_ERROR "We don't seem to have mmap")
 	endif(HAVE_MMAP)
@@ -47,7 +46,7 @@ function(add_cstuff)
 	pkg_check_modules(GLIB
 	  REQUIRED IMPORTED_TARGET
 	  glib-2.0)
-	target_sources(cstuff path.c)
+	target_sources(cstuff PUBLIC path.c)
 	target_link_libraries(cstuff PUBLIC PkgConfig::GLIB)
   endif(want_path)
-endfunction(add_cstuff)
+endmacro(add_cstuff)
