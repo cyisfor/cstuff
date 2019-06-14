@@ -1,33 +1,41 @@
 cmake_minimum_required(VERSION 3.14)
 project(cstuff VERSION 0.1)
+set(cstuff_source_dir "${CMAKE_CURRENT_SOURCE_DIR}")
 
-file(WRITE "${CMAKE_BINARY_DIR}/cmakesucks.c" "")
-add_library(cstuff "${CMAKE_BINARY_DIR}/cmakesucks.c")
-target_include_directories(cstuff PUBLIC
-  "${CMAKE_CURRENT_SOURCE_DIR}")
-
-macro(add_cstuff)
+function(add_cstuff)
   set(options db itoa mmapfile pat)
   cmake_parse_arguments(PARSE_ARGV 0 want "${options}" "" "")
 
+  file(WRITE "${CMAKE_BINARY_DIR}/cmakesucks.c" "")
+  add_library(cstuff "${CMAKE_BINARY_DIR}/cmakesucks.c")
+  
+
+  set(CMAKE_CURRENT_SOURCE_DIR "${cstuff_source_dir}")
+  target_include_directories(cstuff PUBLIC "${cstuff_source_dir}")
+
+  function(sourcederp)
+	list(TRANSFORM ARGV REPLACE "(.*)" "${cstuff_source_dir}/\\1")
+	target_sources(cstuff ${ARGV})
+  endfunction()
+  
   include(FindPkgConfig)
   include(CheckSymbolExists)
 
   if(want_db)
 	set(want_mmapfile 1)
-	target_sources(cstuff PUBLIC db.c mmapfile.c)
+	sourcederp(cstuff PUBLIC db.c mmapfile.c)
 	pkg_check_modules(SQLITE
 	  REQUIRED IMPORTED_TARGET
 	  sqlite3)
 	target_link_libraries(cstuff PUBLIC PkgConfig::SQLITE)
   endif(want_db)
   if(want_itoa)
-	target_sources(cstuff PUBLIC itoa.c)
+	sourcederp(cstuff PUBLIC itoa.c)
   endif(want_itoa)
   if(want_mmapfile)
 	check_symbol_exists(mmap "sys/mman.h" HAVE_MMAP)
 	if(HAVE_MMAP)
-	  target_sources(cstuff PUBLIC mmapfile.c)
+	  sourcederp(cstuff PUBLIC mmapfile.c)
 	else(HAVE_MMAP)
 	  message(FATAL_ERROR "We don't seem to have mmap")
 	endif(HAVE_MMAP)
@@ -36,7 +44,7 @@ macro(add_cstuff)
 	include(CheckLibraryExists)
 	check_library_exists(pcre pcre_jit_compile /usr/lib HAVE_PCRE)
 	if(HAVE_PCRE)
-	  target_sources(cstuff pat.c)
+	  sourcederp(cstuff pat.c)
 	  target_link_libraries(cstuff PUBLIC pcre)
 	else(HAVE_PCRE)
 	  message(FATAL_ERROR "Couldn't find the PCRE library")
@@ -46,7 +54,7 @@ macro(add_cstuff)
 	pkg_check_modules(GLIB
 	  REQUIRED IMPORTED_TARGET
 	  glib-2.0)
-	target_sources(cstuff PUBLIC path.c)
+	sourcederp(cstuff PUBLIC path.c)
 	target_link_libraries(cstuff PUBLIC PkgConfig::GLIB)
   endif(want_path)
-endmacro(add_cstuff)
+endfunction(add_cstuff)
