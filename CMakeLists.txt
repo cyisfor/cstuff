@@ -3,7 +3,7 @@ project(cstuff VERSION 0.1)
 
 function(add_cstuff)
   set(options db itoa mmapfile pat)
-  cmake_parse_arguments(PARSE_ARGV 0 want "${options}")
+  cmake_parse_arguments(PARSE_ARGV 0 want "${options}" "" "")
 
   file(WRITE "${CMAKE_BINARY_DIR}/cmakesucks.c" "")
   add_library(cstuff "${CMAKE_BINARY_DIR}cmakesucks.c")
