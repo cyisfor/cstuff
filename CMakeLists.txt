@@ -1,3 +1,6 @@
+cmake_minimum_required(VERSION 3.14)
+project(cstuff VERSION 0.1)
+
 function(add_cstuff)
   set(options db itoa mmapfile pat)
   cmake_parse_arguments(PARSE_ARGV 0 want "${options}")
