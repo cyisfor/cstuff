@@ -104,5 +104,8 @@ const char* ZSTR(const string st) {
 }
 
 #define STRANDLEN(st) st.base, st.len
+#include <assert.h>
+
+#define STRING_FOR_PRINTF(st) ({ assert(st.len <= 0xFFFFFFFF); (unsigned int)st.len; }), st.base
 
 #endif /* _MYSTRING_H_ */
