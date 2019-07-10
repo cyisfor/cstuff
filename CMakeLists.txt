@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 project(cstuff VERSION 0.1)
-set(cstuff_source_dir "${CMAKE_CURRENT_SOURCE_DIR}")
+set(cstuff_source_dir "${CMAKE_CURRENT_SOURCE_DIR}" PARENT_SCOPE)
 
 function(add_cstuff)
   set(options db itoa mmapfile pat)
@@ -9,13 +9,10 @@ function(add_cstuff)
   file(WRITE "${CMAKE_BINARY_DIR}/cmakesucks.c" "")
   add_library(cstuff "${CMAKE_BINARY_DIR}/cmakesucks.c")
   
-
-  set(CMAKE_CURRENT_SOURCE_DIR "${cstuff_source_dir}")
   target_include_directories(cstuff PUBLIC "${cstuff_source_dir}")
 
   function(sourcederp)
 	set(sources)
-	message(STATUS "uhhhh ${CMAKE_CURRENT_SOURCE_DIR} => ${cstuff_source_dir}")
 	foreach(arg IN LISTS ARGV)
 	  get_filename_component(aarg "${arg}" ABSOLUTE BASE_DIR
 		"${cstuff_source_dir}")
