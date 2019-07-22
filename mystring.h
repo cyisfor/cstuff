@@ -1,8 +1,6 @@
 #ifndef _MYSTRING_H_
 #define _MYSTRING_H_
 
-#include "myint.h"
-
 #include <string.h> // memcpy
 #include <stdio.h> // snprintf
 #include <stdlib.h> // malloc
@@ -19,19 +17,17 @@ typedef struct cstring {
 } cstring;
 */
 
-#ifndef uchar
-#define uchar unsigned char
-#endif
+#include "myint.h"
 
 typedef struct string {
-	const uchar* base;
+	const byte* base;
 	size_t len;
 } string;
 
 /* C continues to suck, so we have to have a special 'non-const-string' class
    for when the base needs to be modified but not extended (bstring). We can't
-   just define string as 'uchar*' without const, because then we could only use
-   const strings when we wanted const uchar*, and C forbids assignment to
+   just define string as 'byte*' without const, because then we could only use
+   const strings when we wanted const byte*, and C forbids assignment to
    a const value.
 
    i.e.
@@ -44,12 +40,12 @@ typedef struct string {
    s.base[0] = 'b'; // error: C sucks
  */
 typedef struct ncstring {
-	uchar* base;
+	byte* base;
 	size_t len;
 } ncstring;
 
 typedef struct bstring {
-	uchar* base;
+	byte* base;
 	size_t len;
 	size_t space;
 } bstring;
@@ -59,13 +55,13 @@ typedef struct bstring {
 #define STRING(str) (*((string*)&str)) // any kind of string, but may segfault
 #define LITSTR(lit) (const string){.base = lit, .len = LITSIZ(lit)}
 static
-bstring bstringstr(const uchar* str, size_t len) {
-	uchar* buf = malloc(len);
+bstring bstringstr(const byte* str, size_t len) {
+	byte* buf = malloc(len);
 	memcpy(buf,str,len);
 	return ((bstring) { .base = buf, .len = len, .space = len });
 }
 
-static string strlenstr(const uchar* str) {
+static string strlenstr(const byte* str) {
 	size_t len = strlen(str);
 	return (string) { .base = str, .len = len};
 }
@@ -90,7 +86,7 @@ void strreserve(bstring* st, size_t n) {
 }
 
 static
-void straddn(bstring* st, const uchar* c, size_t n) {
+void straddn(bstring* st, const byte* c, size_t n) {
 	strreserve(st, n);
 	memcpy(st->base + st->len, c, n);
 	st->len += n;
@@ -120,8 +116,8 @@ void strclear(bstring* st) {
 }
 
 static
-const uchar* ZSTR(const string st) {
-	static uchar* buf = NULL;
+const byte* ZSTR(const string st) {
+	static byte* buf = NULL;
 	if(st.base[st.len-1] == 0) return st.base;
 	buf = realloc(buf, st.len+1);
 	memcpy(buf, st.base, st.len);
