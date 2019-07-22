@@ -22,6 +22,26 @@ typedef struct string {
 	size_t len;
 } string;
 
+/* C continues to suck, so we have to have a special 'non-const-string' class
+   for when the base needs to be modified but not extended (bstring). We can't
+   just define string as 'char*' without const, because then we could only use
+   const strings when we wanted const char*, and C forbids assignment to
+   a const value.
+
+   i.e.
+
+   const ncstring s = LITSTR("something");
+   s.base = "somethingelse"; // error
+   s = LITSTR("somethingelse"); // error: C sucks
+
+   string s = { strdup("foo"), 3 };
+   s.base[0] = 'b'; // error: C sucks
+ */
+typedef struct ncstring {
+	char* base;
+	size_t len;
+} ncstring;
+
 typedef struct bstring {
 	char* base;
 	size_t len;
