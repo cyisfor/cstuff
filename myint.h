@@ -13,5 +13,6 @@ typedef uint64_t u64;
 typedef int64_t s64;
 
 typedef s64 identifier;
+typedef u8 byte;
 
 #endif /* _MYINT_H_ */

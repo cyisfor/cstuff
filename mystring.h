@@ -1,6 +1,8 @@
 #ifndef _MYSTRING_H_
 #define _MYSTRING_H_
 
+#include "myint.h"
+
 #include <string.h> // memcpy
 #include <stdio.h> // snprintf
 #include <stdlib.h> // malloc
@@ -17,15 +19,19 @@ typedef struct cstring {
 } cstring;
 */
 
+#ifndef uchar
+#define uchar unsigned char
+#endif
+
 typedef struct string {
-	const char* base;
+	const uchar* base;
 	size_t len;
 } string;
 
 /* C continues to suck, so we have to have a special 'non-const-string' class
    for when the base needs to be modified but not extended (bstring). We can't
-   just define string as 'char*' without const, because then we could only use
-   const strings when we wanted const char*, and C forbids assignment to
+   just define string as 'uchar*' without const, because then we could only use
+   const strings when we wanted const uchar*, and C forbids assignment to
    a const value.
 
    i.e.
@@ -38,12 +44,12 @@ typedef struct string {
    s.base[0] = 'b'; // error: C sucks
  */
 typedef struct ncstring {
-	char* base;
+	uchar* base;
 	size_t len;
 } ncstring;
 
 typedef struct bstring {
-	char* base;
+	uchar* base;
 	size_t len;
 	size_t space;
 } bstring;
@@ -53,13 +59,13 @@ typedef struct bstring {
 #define STRING(str) (*((string*)&str)) // any kind of string, but may segfault
 #define LITSTR(lit) (const string){.base = lit, .len = LITSIZ(lit)}
 static
-bstring bstringstr(const char* str, size_t len) {
-	char* buf = malloc(len);
+bstring bstringstr(const uchar* str, size_t len) {
+	uchar* buf = malloc(len);
 	memcpy(buf,str,len);
 	return ((bstring) { .base = buf, .len = len, .space = len });
 }
 
-static string strlenstr(const char* str) {
+static string strlenstr(const uchar* str) {
 	size_t len = strlen(str);
 	return (string) { .base = str, .len = len};
 }
@@ -84,7 +90,7 @@ void strreserve(bstring* st, size_t n) {
 }
 
 static
-void straddn(bstring* st, const char* c, size_t n) {
+void straddn(bstring* st, const uchar* c, size_t n) {
 	strreserve(st, n);
 	memcpy(st->base + st->len, c, n);
 	st->len += n;
@@ -114,8 +120,8 @@ void strclear(bstring* st) {
 }
 
 static
-const char* ZSTR(const string st) {
-	static char* buf = NULL;
+const uchar* ZSTR(const string st) {
+	static uchar* buf = NULL;
 	if(st.base[st.len-1] == 0) return st.base;
 	buf = realloc(buf, st.len+1);
 	memcpy(buf, st.base, st.len);
