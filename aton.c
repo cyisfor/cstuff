@@ -68,52 +68,36 @@ char to_digit(char numeral, int base) {
 	case BASE_Q:
 		switch(numeral) {
 		case 'Q':
-		case 'q':
 			return 0;
 		case 'B':
-		case 'b':
 			return 1;
 		case 'P':
-		case 'p':
 			return 2;
 		case 'V':
-		case 'v':
 			return 3;
 		case 'F':
-		case 'f':
 			return 4;
 		case 'Z':
-		case 'z':
 			return 5;
 		case 'S':
-		case 's':
 			return 6;
 		case 'D':
-		case 'd':
 			return 7;
 		case 'T':
-		case 't':
 			return 8;
 		case 'J':
-		case 'j':
 			return 9;
 		case 'C':
-		case 'c':
 			return 0xa;
 		case 'G':
-		case 'g':
 			return 0xb;
 		case 'K':
-		case 'k':
 			return 0xc;
 		case 'Y':
-		case 'y':
 			return 0xd;
 		case 'X':
-		case 'x':
 			return 0xe;
 		case 'W':
-		case 'w':
 			return 0xf;
 		default:
 			return -1;
@@ -224,7 +208,6 @@ double strtod(string src, size_t* end, int base) {
 		}
 		place /= derp;
 		ret += digit * place;
-		printf("fwhat %lf %d %lf %c\n", ret, digit, place, src.base[i]);
 	}
 	*end = i;
 	return ret;

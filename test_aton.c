@@ -10,7 +10,9 @@ int main(int argc, char *argv[])
 		fputc(')',stdout);
 		fputc('\n',stdout);
 	}
-	testint(LITSTR("BQQ"), BASE_Q);
+	testint(LITSTR("BQQq"), BASE_Q);
+	testint(LITSTR("BQQFOOPS"), BASE_Q);
+	testint(LITSTR("BQQq|\bFOOPS"), BASE_Q);
 	void testdouble(string src, int base) {
 		size_t end = 0;
 		printf("%lf and then (", strtod(src, &end, base));
@@ -21,7 +23,7 @@ int main(int argc, char *argv[])
 	testdouble(LITSTR("4.56 ashthast"), 0);
 	testdouble(LITSTR(".123"), 0);
 	testdouble(LITSTR("0.123"), 0);
-	testdouble(LITSTR("F.T"), BASE_Q);
+	testdouble(LITSTR("QF.T hi there"), BASE_Q);
 		
     return 0;
 }
