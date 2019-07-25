@@ -30,6 +30,6 @@ int main(int argc, char *argv[])
 	testdouble(LITSTR("Q.TT hi there"), 0);
 	testdouble(LITSTR(".01a0 hi there"), 0);
 	testdouble(LITSTR("0x.01a0 hi there"), 0);
-		
+	testdouble(LITSTR("Z.Z wow"), 26);
     return 0;
 }
