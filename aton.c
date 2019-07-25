@@ -2,11 +2,11 @@
 #include "aton.h"
 
 static
-string adjust_for_zero_base(int* base) {
+string adjust_for_zero_base(string src, int* base) {
 	if(src.base[0] == '0') {
 		if(src.len == 1) {
 			*base = -1;
-			return;
+			return src;
 		}
 		--src.len;
 		++src.base;
@@ -35,6 +35,7 @@ string adjust_for_zero_base(int* base) {
 	} else {
 		*base = 010;
 	}
+	return src;
 }
 
 #define  FOR_BASE_Q X(Q) X(q)
@@ -157,7 +158,7 @@ long int strtol(string src, size_t* end, int base) {
 	size_t i;
 	assert(src.len > 0);
 	if(base == 0) {
-		src = adjust_for_zero_base(&base);
+		src = adjust_for_zero_base(src, &base);
 		if(base == -1) return 0; /* XXX: derp */
 	}
 	
@@ -183,14 +184,14 @@ DONE:
 }
 
 double strtod(string src, size_t* end, int base) {
-	const char* dot = memchr(src.base, '.', src.len);
+	const byte* dot = memchr(src.base, '.', src.len);
 	/* TODO: check locale for weirdo Deutsch decimal comma */
 	if(dot == NULL) {
 		return strtol(src, end, base);
 	}
 	string intpart = {
 		.base = src.base,
-		.len = dot - src.base;
+		.len = dot - src.base
 	};
 	*end = 0;
 	double ret = strtol(intpart, end, base);
