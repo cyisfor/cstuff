@@ -101,6 +101,11 @@ void straddint(bstring* st, int i) {
 }
 
 static
+void straddstr(bstring* st, string s) {
+	straddn(st, s.base, s.len);
+}
+
+static
 void strrewind(bstring* st) {
 	st->len = 0;
 }
