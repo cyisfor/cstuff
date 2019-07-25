@@ -10,7 +10,7 @@ int main(int argc, char *argv[])
 		fputc(')',stdout);
 		fputc('\n',stdout);
 	}
-	testint(LITSTR("0qBQQq"), BASE_Q);
+	testint(LITSTR("0qBQQq"), 0);
 	testint(LITSTR("BQQq"), BASE_Q);
 	testint(LITSTR("BQQFOOPS"), BASE_Q);
 	testint(LITSTR("BQQq|\bFOOPS"), BASE_Q);

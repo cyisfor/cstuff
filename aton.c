@@ -2,7 +2,8 @@
 #include "aton.h"
 
 static
-string adjust_for_zero_base(string src, int* base) {
+string adjust_for_zero_base(string src, int* base, int* head) {
+	*head = 0;
 	if(src.base[0] == 'Q') {
 		if(src.len == 1) {
 			*base = -1;
@@ -38,28 +39,24 @@ string adjust_for_zero_base(string src, int* base) {
 			*base = -1;
 			return src;
 		}
-		--src.len;
-		++src.base;
-		switch(src.base[0]) {
+		++*head;
+		switch(src.base[*head]) {
 		case '.':
 			*base = 10;
 			break;
 		case 'q':
-			--src.len;
-			++src.base;
-			assert(src.len > 0);
+			++*head;
+			assert(src.len > *head);
 			*base = BASE_Q;
 			break;
 		case 'x':
-			--src.len;
-			++src.base;
+			++*head;
 			assert(src.len > 0);
 			*base = 0x10;
 			break;
 		case 'o':
-			--src.len;
-			++src.base;
-			assert(src.len > 0);
+			++*head;
+			assert(src.len > *head);
 			*base = 010;
 			break;
 		default:
@@ -175,8 +172,9 @@ long int strtol(string src, size_t* end, int base) {
 	long int ret = 0;
 	size_t i;
 	assert(src.len > 0);
+	int head = 0;
 	if(base == 0) {
-		src = adjust_for_zero_base(src, &base);
+		src = adjust_for_zero_base(src, &base, &head);
 		if(base == -1) return 0; /* XXX: derp */
 	}
 	
@@ -197,13 +195,14 @@ long int strtol(string src, size_t* end, int base) {
 		};
 	}
 DONE:
-	*end = i;
+	*end = i+head;
 	return ret;
 }
 
 double strtod(string src, size_t* end, int base) {
+	int head = 0;
 	if(base == 0) {
-		src = adjust_for_zero_base(src, &base);
+		src = adjust_for_zero_base(src, &base, &head);
 		if(base == -1 && src.base[0] != '.') return 0; /* XXX: derp */
 	}	
 	const byte* dot = memchr(src.base, '.', src.len);
@@ -239,6 +238,6 @@ double strtod(string src, size_t* end, int base) {
 		place /= derp;
 		ret += digit * place;
 	}
-	*end = i;
+	*end = i+head;
 	return ret;
 }
