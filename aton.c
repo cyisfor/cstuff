@@ -2,12 +2,12 @@
 #include "aton.h"
 
 static
-string adjust_for_zero_base(string src, int* base, int* head) {
+void adjust_for_zero_base(string src, int* base, int* head) {
 	*head = 0;
 	if(src.base[0] == 'Q') {
 		if(src.len == 1) {
 			*base = -1;
-			return src;
+			return;
 		}
 		switch(src.base[1]) {
 		case 'Q':
@@ -26,10 +26,11 @@ string adjust_for_zero_base(string src, int* base, int* head) {
 		case 'Y':
 		case 'X':
 		case 'W':
-			break;
+			*base = BASE_Q;
+			return;
 		default:
 			*base = -1;
-			return src;
+			return;
 		};
 	}
 
@@ -37,7 +38,7 @@ string adjust_for_zero_base(string src, int* base, int* head) {
 	if(src.base[0] == '0') {
 		if(src.len == 1) {
 			*base = -1;
-			return src;
+			return;
 		}
 		++*head;
 		switch(src.base[*head]) {
@@ -66,7 +67,7 @@ string adjust_for_zero_base(string src, int* base, int* head) {
 	} else {
 		*base = 10;
 	}
-	return src;
+	return;
 }
 
 #define  FOR_BASE_Q X(Q) X(q)
@@ -174,11 +175,11 @@ long int strtol(string src, size_t* end, int base) {
 	assert(src.len > 0);
 	int head = 0;
 	if(base == 0) {
-		src = adjust_for_zero_base(src, &base, &head);
+		adjust_for_zero_base(src, &base, &head);
 		if(base == -1) return 0; /* XXX: derp */
 	}
 	
-	for(i=0;i<src.len;++i) {
+	for(i=head;i<src.len;++i) {
 		char digit = to_digit(src.base[i], base);
 		if(digit == -1) goto DONE;
 		switch(base) {
@@ -195,7 +196,7 @@ long int strtol(string src, size_t* end, int base) {
 		};
 	}
 DONE:
-	*end = i+head;
+	*end = i;
 	return ret;
 }
 
@@ -223,10 +224,8 @@ double strtod(string src, size_t* end, int base) {
 			return 0.0;
 		}
 		/* we are at the dot. */
-		*end = end2;
 		assert(src.base[end2] == '.');
 	}
-	++*end;
 	size_t i;
 	double place = 1;
 	int derp = base == BASE_Q ? 0x10 : base;
@@ -238,6 +237,6 @@ double strtod(string src, size_t* end, int base) {
 		place /= derp;
 		ret += digit * place;
 	}
-	*end = i+head;
+	*end = i;
 	return ret;
 }
