@@ -57,7 +57,7 @@ function(add_cstuff)
 	# for g_slice_etc... should we just use malloc?
 	include(FindPkgConfig)
 	pkg_check_modules(GLIB REQUIRED IMPORTED_TARGET glib-2.0)
-	target_link_libraries(cstuff PRIVATE PkgConfig::GLIB)
+	target_link_libraries(cstuff PUBLIC PkgConfig::GLIB)
   endif(want_pat)
   if(want_path)
 	include(FindPkgConfig)

@@ -25,7 +25,7 @@ struct plain_pat {
     gboolean caseless;
 };
 
-static void pats_init(void) {
+void pats_init(void) {
     stack = pcre_jit_stack_alloc(0x100,0x80000);
 }
 
@@ -47,7 +47,7 @@ struct pat* pat_setup(const string pattern, enum pat_mode mode) {
         if(mode == pat_match) {
             self->caseless = TRUE;
             // needs freeing
-            self->substring = {
+            self->substring = (string){
 				.base = g_ascii_strdown(pattern.base, pattern.len),
 				.len = pattern.len
 			};
@@ -59,9 +59,19 @@ struct pat* pat_setup(const string pattern, enum pat_mode mode) {
     } else {
         struct pcre_pat* self = g_new(struct pcre_pat,1);
         assert(self);
+		const char* zzz;
+		if(pattern.base[pattern.len-1] != '\0') {
+			// sigh
+			zzz = ZSTR(pattern);
+		} else {
+			zzz = pattern.base;
+		}
         self->parent.mode = mode;
-        self->pat = pcre_compile(pattern,0,
+        self->pat = pcre_compile(zzz, 0,
                 &err,&erroffset,NULL);
+		if(pattern.base[pattern.len-1] != '\0') {
+			free((char*)zzz);
+		}
         if(!self->pat) {
             fprintf(stderr,"PCRE COMPILE ERROR %s\n",err);
             abort();
@@ -96,7 +106,7 @@ void pat_cleanup(struct pat** self) {
     g_free(doomed);
 }
 
-gboolean pat_check(struct pat* parent, string test) {
+bool pat_check(struct pat* parent, string test) {
     if(parent->mode == pat_plain || parent->mode == pat_match) {
         struct plain_pat* self = (struct plain_pat*) parent;
 		if(test.len != self->substring.len) return false;

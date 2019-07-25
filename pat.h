@@ -12,7 +12,7 @@ struct pat;
 struct pat* pat_setup(string pattern, enum pat_mode mode);
 void pat_cleanup(struct pat**);
 
-bool pat_check(struct pat*, const char* test);
+bool pat_check(struct pat*, string test);
 
 struct pat_captures {
 	bool matched;
