@@ -10,6 +10,7 @@ void adjust_for_zero_base(string src, int* base, int* head) {
 			return;
 		}
 		switch(src.base[1]) {
+		case '.':
 		case 'Q':
 		case 'B':
 		case 'P':
@@ -248,16 +249,16 @@ double strtod(string src, size_t* end, int base) {
 		size_t end2 = 0;
 		ret = strtol(intpart, &end2, base);
 		if(ret == 0 && (end2 != intpart.len)) {
-			*end = end2;
+			*end = end2 + head;
 			return 0.0;
 		}
 		/* we are at the dot. */
-		assert(src.base[end2] == '.');
+		assert(src.base[end2+head] == '.');
 	}
 	size_t i;
 	double place = 1;
 	int derp = base == BASE_Q ? 0x10 : base;
-	for(i=intpart.len+1;i<src.len;++i) {
+	for(i=intpart.len+1+head;i<src.len;++i) {
 		char digit = to_digit(src.base[i], base);
 		if(digit == -1) {
 			break;
@@ -265,6 +266,8 @@ double strtod(string src, size_t* end, int base) {
 		place /= derp;
 		ret += digit * place;
 	}
-	*end = i;
+	if(i > intpart.len + 1 + head) {
+		*end = i;
+	}
 	return ret;
 }
