@@ -204,13 +204,18 @@ double strtod(string src, size_t* end, int base) {
 		.base = src.base,
 		.len = dot - src.base
 	};
-	*end = 0;
-	double ret = strtol(intpart, end, base);
-	if(ret == 0 && (*end != intpart.len)) {
-		return 0.0;
+	double ret = 0;
+	if(intpart.len) {
+		size_t end2 = 0;
+		ret = strtol(intpart, &end2, base);
+		if(ret == 0 && (end2 != intpart.len)) {
+			*end = end2;
+			return 0.0;
+		}
+		/* we are at the dot. */
+		*end = end2;
+		assert(src.base[end2] == '.');
 	}
-	/* we are at the dot. */
-	assert(src.base[*end] == '.');
 	++*end;
 	size_t i;
 	double place = 1;
