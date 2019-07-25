@@ -169,16 +169,25 @@ char to_digit(char numeral, int base) {
 	};
 }
 
+
+static
+long int strtol_nonzero(string src, size_t* end, int base, int head);
+
 long int strtol(string src, size_t* end, int base) {
-	long int ret = 0;
-	size_t i;
 	assert(src.len > 0);
 	int head = 0;
 	if(base == 0) {
 		adjust_for_zero_base(src, &base, &head);
 		if(base == -1) return 0; /* XXX: derp */
 	}
-	
+
+	return strtol_nonzero(src, end, base, head);
+}
+
+static
+long int strtol_nonzero(string src, size_t* end, int base, int head) {
+	long int ret = 0;
+	size_t i;
 	for(i=head;i<src.len;++i) {
 		char digit = to_digit(src.base[i], base);
 		if(digit == -1) goto DONE;
@@ -224,10 +233,10 @@ double strtod(string src, size_t* end, int base) {
 	}
 	
 	if(dot == NULL) {
-		dot = memchr(src.base, '.', src.len);
+		dot = memchr(src.base+head, '.', src.len-head);
 		/* TODO: check locale for weirdo Deutsch decimal comma */
 		if(dot == NULL) {
-			return strtol(src, end, base);
+			return strtol_nonzero(src, end, base, head);
 		}
 	}
 	string intpart = {

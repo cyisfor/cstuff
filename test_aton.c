@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
 	testdouble(LITSTR("QF.T hi there"), BASE_Q);
 	testdouble(LITSTR(".TT hi there"), BASE_Q);
 	testdouble(LITSTR(".0a0 hi there"), BASE_Q);
-	testdouble(LITSTR("0x.0a0 hi there"), BASE_Q);
+	testdouble(LITSTR("0x0.0a0 hi there"), BASE_Q);
 		
     return 0;
 }
