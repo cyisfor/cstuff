@@ -75,6 +75,10 @@ void adjust_for_zero_base(string src, int* base, int* head) {
 
 static
 char to_digit(char numeral, int base) {
+	/* we don't have numerals for bases higher than 36
+	   0-9 A-Z = 36 numerals
+	*/
+	assert(base <= 36); 
 	switch(base) {
 	case 10:
 		switch(numeral) {
@@ -169,7 +173,6 @@ char to_digit(char numeral, int base) {
 	}
 	};
 }
-
 
 static
 long int strtol_nonzero(string src, size_t* end, int base, int head);
