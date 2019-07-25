@@ -202,7 +202,7 @@ DONE:
 
 double strtod(string src, size_t* end, int base) {
 	int head = 0;
-	const byte* dot;
+	const byte* dot = NULL;
 	if(base == 0) {
 		adjust_for_zero_base(src, &base, &head);
 		if(base == -1) {
@@ -212,23 +212,27 @@ double strtod(string src, size_t* end, int base) {
 					src.base+1,
 					src.len-1
 				};
-				adjust_for_zero_base(derp, &base, &head);
+				int derphead;
+				adjust_for_zero_base(derp, &base, &derphead);
 				if(base == -1)
 					return 0;
-				++head;
+				head = 0;
 			} else {
 				return 0; /* XXX: derp */
 			}
 		}
-	}	
-	const byte* dot = memchr(src.base, '.', src.len);
-	/* TODO: check locale for weirdo Deutsch decimal comma */
+	}
+	
 	if(dot == NULL) {
-		return strtol(src, end, base);
+		dot = memchr(src.base, '.', src.len);
+		/* TODO: check locale for weirdo Deutsch decimal comma */
+		if(dot == NULL) {
+			return strtol(src, end, base);
+		}
 	}
 	string intpart = {
-		.base = src.base,
-		.len = dot - src.base
+		.base = src.base + head,
+		.len = dot - src.base - head
 	};
 	double ret = 0;
 	if(intpart.len) {
