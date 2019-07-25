@@ -47,7 +47,7 @@ string adjust_for_zero_base(string src, int* base) {
 #define  FOR_BASE_Q X(Q) X(q)
 
 static
-char to_digit(int base, char numeral) {
+char to_digit(char numeral, int base) {
 	switch(base) {
 	case 10:
 		switch(numeral) {
@@ -191,6 +191,10 @@ DONE:
 }
 
 double strtod(string src, size_t* end, int base) {
+	if(base == 0) {
+		src = adjust_for_zero_base(src, &base);
+		if(base == -1 && src.base[0] != '.') return 0; /* XXX: derp */
+	}	
 	const byte* dot = memchr(src.base, '.', src.len);
 	/* TODO: check locale for weirdo Deutsch decimal comma */
 	if(dot == NULL) {
@@ -206,8 +210,8 @@ double strtod(string src, size_t* end, int base) {
 		return 0.0;
 	}
 	/* we are at the dot. */
-	++end;
 	assert(src.base[*end] == '.');
+	++*end;
 	size_t i;
 	double place = 1;
 	for(i=intpart.len+1;i<src.len;++i) {
@@ -216,7 +220,7 @@ double strtod(string src, size_t* end, int base) {
 			break;
 		}
 		place /= base;
-		ret += digit / place;
+		ret += digit * place;
 	}
 	*end = i;
 	return ret;
