@@ -11,11 +11,17 @@ string adjust_for_zero_base(string src, int* base) {
 		--src.len;
 		++src.base;
 		switch(src.base[0]) {
+		case '.':
+			++src.len;
+			--src.base;
+			*base = 10;
+			break;
 		case 'q':
 			--src.len;
 			++src.base;
 			assert(src.len > 0);
 			*base = BASE_Q;
+			break;
 		case 'x':
 			--src.len;
 			++src.base;
@@ -33,7 +39,7 @@ string adjust_for_zero_base(string src, int* base) {
 			break;
 		};
 	} else {
-		*base = 010;
+		*base = 10;
 	}
 	return src;
 }
@@ -164,6 +170,7 @@ long int strtol(string src, size_t* end, int base) {
 	
 	for(i=0;i<src.len;++i) {
 		char digit = to_digit(src.base[i], base);
+		printf("what %c %d\n", src.base[i], digit);
 		if(digit == -1) goto DONE;
 		switch(base) {
 		case 010:
@@ -200,11 +207,11 @@ double strtod(string src, size_t* end, int base) {
 	}
 	/* we are at the dot. */
 	++end;
-	assert(src.base[end] == '.');
+	assert(src.base[*end] == '.');
 	size_t i;
 	double place = 1;
 	for(i=intpart.len+1;i<src.len;++i) {
-		char digit = to_digit(src.base[i]);
+		char digit = to_digit(src.base[i], base);
 		if(digit == -1) {
 			break;
 		}
