@@ -3,6 +3,36 @@
 
 static
 string adjust_for_zero_base(string src, int* base) {
+	if(src.base[0] == 'Q') {
+		if(src.len == 1) {
+			*base = -1;
+			return src;
+		}
+		switch(src.base[1]) {
+		case 'Q':
+		case 'B':
+		case 'P':
+		case 'V':
+		case 'F':
+		case 'Z':
+		case 'S':
+		case 'D':
+		case 'T':
+		case 'J':
+		case 'C':
+		case 'G':
+		case 'K':
+		case 'Y':
+		case 'X':
+		case 'W':
+			break;
+		default:
+			*base = -1;
+			return src;
+		};
+	}
+
+		
 	if(src.base[0] == '0') {
 		if(src.len == 1) {
 			*base = -1;
