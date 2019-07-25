@@ -202,9 +202,24 @@ DONE:
 
 double strtod(string src, size_t* end, int base) {
 	int head = 0;
+	const byte* dot;
 	if(base == 0) {
-		src = adjust_for_zero_base(src, &base, &head);
-		if(base == -1 && src.base[0] != '.') return 0; /* XXX: derp */
+		adjust_for_zero_base(src, &base, &head);
+		if(base == -1) {
+			if(src.base[0] == '.') {
+				dot = 0;
+				string derp = {
+					src.base+1,
+					src.len-1
+				};
+				adjust_for_zero_base(derp, &base, &head);
+				if(base == -1)
+					return 0;
+				++head;
+			} else {
+				return 0; /* XXX: derp */
+			}
+		}
 	}	
 	const byte* dot = memchr(src.base, '.', src.len);
 	/* TODO: check locale for weirdo Deutsch decimal comma */
