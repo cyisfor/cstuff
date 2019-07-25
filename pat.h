@@ -21,7 +21,6 @@ struct pat_captures {
 };
 
 struct pat_captures pat_capture(struct pat* parent, string test, int start);
-
-void pat_capture_done(struct pat_captures);
+void pat_capture_done(struct pat_captures* cap);
 
 void pats_uninit(void);

@@ -134,13 +134,27 @@ struct pat_captures pat_capture(struct pat* parent, string test, int start) {
     g_assert(parent->mode == pat_pcre);
     struct pcre_pat* self = (struct pcre_pat*) parent;
 	if(self->ovecsize == 0) {
+		int captures;
 		int res = pcre_fullinfo(self->pat,
 								self->study,
 								PCRE_INFO_CAPTURECOUNT,
-								&self->ovecsize);
+								&captures);
 		g_assert(res == 0);
-		self->ovecsize = self->ovecsize * 3 / 2 + 2;
+		/* 2 captures = capture 0, 1, 2 = 0,0 1,1 2,2 = 2*3
+		   but needs 1/3 for workspace so n * 2/3 = 2*3, so n = 2*3 * 3/2 = 9
+		   captures * 3 * 3 / 2 then +1 if * 3*3 is odd
+		*/
+		int derp = captures * 3 * 3;
+		if(derp % 2 == 1) {
+			self->ovecsize = derp / 2 + 1;
+		} else {
+			self->ovecsize = derp / 2;
+		}
 	}
+	struct pat_captures cap = {
+		.ovector = g_slice_alloc(self->ovecsize * sizeof(int)),
+		.ovecsize = self->ovecsize
+	};
     int rc = pcre_jit_exec(
 		self->pat,
 		self->study,
@@ -148,9 +162,14 @@ struct pat_captures pat_capture(struct pat* parent, string test, int start) {
 		test.len,
 		start,
 		0,
-		ovector,
-		ovecsize,
+		cap.ovector,
+		cap.ovecsize,
 		stack);
-	return rc >= 0;
+	cap.matches = rc >= 0;
+	return cap;
 }
 
+void pat_capture_done(struct pat_captures* cap) {
+	g_slice_free1(cap->ovector, cap->ovecsize * sizeof(int));
+	cap->ovector = NULL;
+}
