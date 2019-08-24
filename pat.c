@@ -117,7 +117,7 @@ bool pat_check(struct pat* parent, string test) {
 			self->substring.base,
 			self->substring.len);
         if(self->caseless==TRUE)
-            g_free((char*)test);
+            g_free((char*)test.base);
 		return found != NULL;
     }
     struct pcre_pat* self = (struct pcre_pat*) parent;
@@ -134,10 +134,7 @@ bool pat_check(struct pat* parent, string test) {
 		0,           /* number of elements in the output vector */
 		stack); /* jit stack */
 
-  if(rc >= 0) {
-      return TRUE;
-  }
-  return FALSE;
+	return rc >= 0;
 }
 
 struct pat_captures pat_capture(struct pat* parent, string test, int start) {
@@ -175,11 +172,11 @@ struct pat_captures pat_capture(struct pat* parent, string test, int start) {
 		cap.ovector,
 		cap.ovecsize,
 		stack);
-	cap.matches = rc >= 0;
+	cap.matched = rc >= 0;
 	return cap;
 }
 
 void pat_capture_done(struct pat_captures* cap) {
-	g_slice_free1(cap->ovector, cap->ovecsize * sizeof(int));
+	g_slice_free1(cap->ovecsize * sizeof(int), cap->ovector);
 	cap->ovector = NULL;
 }
