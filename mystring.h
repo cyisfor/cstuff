@@ -52,7 +52,8 @@ typedef struct bstring {
 
 
 #define CSTRING(str) (*((const string*)&str)) // any kind of string
-#define STRING(str) (*((string*)&str)) // any kind of string, but may segfault
+#define DEREFSTRING(str) (*((string*)&str)) // any kind of string, but may segfault
+#define STRING(str) ((string){str.base, str.len}) // any kind of string
 #define LITSTR(lit) (const string){.base = lit, .len = LITSIZ(lit)}
 static
 bstring bstringstr(const byte* str, size_t len) {
@@ -129,5 +130,7 @@ const byte* ZSTR(const string st) {
 #include <assert.h>
 
 #define STRING_FOR_PRINTF(st) ({ assert(st.len <= 0xFFFFFFFF); (unsigned int)st.len; }), st.base
+
+#define NULL_STRING ((string){NULL,0})
 
 #endif /* _MYSTRING_H_ */
