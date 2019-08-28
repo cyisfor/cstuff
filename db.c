@@ -98,6 +98,14 @@ void db_begin() {
 	db_once(begin);
 }
 
+string db_column_string(db_stmt stmt, int col) {
+	string ret = {
+		.base = sqlite3_column_blob(stmt,col),
+		.len = sqlite3_column_bytes(stmt,col)
+	};
+	return ret;
+}
+
 void db_commit() {
 	if(!in_transaction) return;
 	db_once(commit);

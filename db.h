@@ -1,3 +1,5 @@
+#include "mystring.h"
+
 #include <sqlite3.h>
 #include <stdlib.h> // size_t
 #include <stdbool.h>
@@ -53,6 +55,8 @@ ident db_lastrow(void);
 void db_begin(void);
 void db_commit(void);
 void db_retransaction(void);
+
+string db_column_string(db_stmt stmt, int col);
 
 #include "defer.h"
 
