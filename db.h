@@ -4,6 +4,8 @@
 
 typedef sqlite3_int64 ident;
 
+typedef sqlite3_stmt* db_stmt;
+
 void db_init(const char* path);
 void db_close(void);
 
@@ -15,23 +17,23 @@ void db_close(void);
 int db_checkderp(int res, const char* file, int line);
 
 #define db_step(stmt) db_stepderp(stmt,__FILE__,__LINE__)
-int db_stepderp(sqlite3_stmt* stmt, const char* file, int line);
+int db_stepderp(db_stmt stmt, const char* file, int line);
 #else
 int db_check(int res);
-int db_step(sqlite3_stmt* stmt);
+int db_step(db_stmt stmt);
 #endif
 
 extern int dberr;
 
 #define DB_OK if(dberr != 0) abort();
 
-void db_once(sqlite3_stmt* stmt);
+void db_once(db_stmt stmt);
 
 #define db_exec(st) db_execn(st.s,st.l)
 int db_execn(const char* s, size_t l);
 
 #define RESULT_HANDLER(name) \
-	bool name(int res, int n, sqlite3_stmt* stmt, const char* tail, size_t sl, size_t l)
+	bool name(int res, int n, db_stmt stmt, const char* tail, size_t sl, size_t l)
 
 typedef RESULT_HANDLER((*result_handler));
 
@@ -44,7 +46,7 @@ void db_load(const char* path, result_handler on_res);
 
 extern const char* db_next; // ehhh
 #define db_prepare(lit) db_preparen(lit,sizeof(lit)-1);
-sqlite3_stmt* db_preparen(const char* s, size_t l);
+db_stmt db_preparen(const char* s, size_t l);
 
 ident db_lastrow(void);
 
