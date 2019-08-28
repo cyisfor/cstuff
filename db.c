@@ -15,7 +15,7 @@ sqlite3* c = NULL;
 
 const char* db_next = NULL; // eh
 
-static bool derp(int res, int n, sqlite3_stmt* stmt, const char* tail, size_t sl, size_t l) {
+static bool derp(int res, int n, db_stmt stmt, const char* tail, size_t sl, size_t l) {
 	if(res == SQLITE_OK || res == SQLITE_ROW || res == SQLITE_DONE) return false;
 	printf("uhh %d %d %d %d\n",res,SQLITE_OK,SQLITE_ROW,SQLITE_DONE);
 	fwrite(tail,1,sl,stderr);
@@ -81,7 +81,7 @@ void db_init(const char* path) {
 	return;
 }
 
-void db_once(sqlite3_stmt* stmt) {
+void db_once(db_stmt stmt) {
 	int res = db_check(sqlite3_step(stmt));
 	assert(res != SQLITE_ROW);
 	sqlite3_reset(stmt);
@@ -151,7 +151,7 @@ void db_close(void) {
 		if(attempt > 1) {
 			sleep(attempt);
 		}
-		sqlite3_stmt* stmt = NULL;
+		db_stmt stmt = NULL;
 		while((stmt = sqlite3_next_stmt(c, stmt))) {
 			printf("closing statement\n%s\n",sqlite3_sql(stmt));
 			db_check(sqlite3_finalize(stmt));
@@ -173,7 +173,7 @@ void db_load(const char* path, result_handler on_res) {
 }
 
 int db_execn(const char* s, size_t l) {
-	sqlite3_stmt* stmt = db_preparen(s,l);
+	db_stmt stmt = db_preparen(s,l);
 	int res = sqlite3_step(stmt);
 	sqlite3_finalize(stmt);
 	return res;
@@ -181,7 +181,7 @@ int db_execn(const char* s, size_t l) {
 
 void db_execmanyn(const char* s, size_t l, result_handler on_res) {
 	if(on_res == NULL) on_res = default_result_handler;
-	sqlite3_stmt* stmt = NULL;
+	db_stmt stmt = NULL;
 	const char* next = NULL;
 	int i = 0;
 	for(;;++i) {
@@ -214,13 +214,13 @@ void db_execmanyn(const char* s, size_t l, result_handler on_res) {
 }
 		
 
-sqlite3_stmt* db_preparen(const char* s, size_t l) {
-	sqlite3_stmt* stmt = NULL;
+db_stmt db_preparen(const char* s, size_t l) {
+	db_stmt stmt = NULL;
 	db_check(sqlite3_prepare_v2(c, s, l,
 															&stmt,
 															&db_next));
 	if(dberr) {
-		fprintf(stderr,"preparing %.*s\n",l,s);
+		fprintf(stderr,"preparing %.*s\n",(int)l,s);
 		return NULL;
 	}
 
@@ -228,12 +228,12 @@ sqlite3_stmt* db_preparen(const char* s, size_t l) {
 }
 
 #ifdef DEBUG
-int db_stepderp(sqlite3_stmt* stmt,const char* file, int line)
+int db_stepderp(db_stmt stmt,const char* file, int line)
 {
 	return db_checkderp(sqlite3_step(stmt),file, line);
 }
 #else
-int db_step(sqlite3_stmt* stmt)	
+int db_step(db_stmt stmt)	
 {
 	int res = db_check(sqlite3_step(stmt));
 	if(dberr) {
@@ -259,5 +259,10 @@ bool db_has_tablen(const char* table, size_t n) {
 	// can't use db_once because we expect SQLITE_ROW
 	int res = db_check(sqlite3_step(has_table));
 	sqlite3_reset(has_table);
+	return res == SQLITE_ROW;
+}
+
+bool db_next_row(db_stmt stmt) {
+	int res = db_step(stmt);
 	return res == SQLITE_ROW;
 }
