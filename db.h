@@ -14,16 +14,9 @@ void db_close(void);
 // this is just to be easier to read...
 #define BIND(type,stmt,column,...) sqlite3_bind_ ## type(stmt, column, ## __VA_ARGS__)
 
-#ifdef DEBUG
-#define db_check(res) db_checkderp(res,__FILE__,__LINE__)
-int db_checkderp(int res, const char* file, int line);
-
-#define db_step(stmt) db_stepderp(stmt,__FILE__,__LINE__)
-int db_stepderp(db_stmt stmt, const char* file, int line);
-#else
 int db_check(int res);
 int db_step(db_stmt stmt);
-#endif
+bool db_next_row(db_stmt stmt);
 
 extern int dberr;
 
