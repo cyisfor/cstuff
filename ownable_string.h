@@ -75,7 +75,7 @@ static void N(nullendify)(const N(string)* str) {
 	}
 	copy[str.l] = '\0';
 	if(str->state == N(OWNED)) {
-		/* XXX: and if no transients exist... refcounting? */
+		/* XXX: and if no transients exist... refcounting bleh */
 		free(str->s);
 	}
 	str->s = copy;
