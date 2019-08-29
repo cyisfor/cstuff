@@ -11,7 +11,32 @@
 #include <error.h>
 #include <unistd.h> // sleep
 
-sqlite3* c = NULL;
+struct dbpriv {
+	struct db public;
+	sqlite3* c;
+	sqlite3_stmt *begin, *commit, *rollback;
+	int dberr;
+};
+typedef struct dbpriv* dbpriv;
+
+db open_with_flags(const char* path, int flags) {
+	dbpriv db = calloc(1,sizeof(struct dbpriv));
+
+	//chdir(getenv("FILEDB"));
+	ensure_eq(
+		SQLITE_OK,
+		sqlite3_open_v2(
+			path, &db->c,
+			flags | SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_PRIVATECACHE,
+			NULL));
+	sqlite3_extended_result_codes(db->c, 1);
+	db->begin = db_prepare(&db->public, "BEGIN");
+	db->commit = db_prepare(&db->public, "COMMIT");
+	db->rollback = db_prepare(&db->public, "ROLLBACK");
+	DB_OK;
+	return;
+}
+
 
 const char* db_next = NULL; // eh
 
@@ -45,30 +70,6 @@ int db_check(db db, int res)
 	fflush(stderr);
 	dberr = res;
 	return res;
-}
- 
-sqlite3_stmt *begin, *commit, *rollback;
-
-void db_init(const char* path) {
-	//chdir(getenv("FILEDB"));
-	assert(SQLITE_OK == sqlite3_open_v2(path, &c,																			
-																		SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
-																			| SQLITE_OPEN_NOMUTEX
-																			| SQLITE_OPEN_PRIVATECACHE,
-																			NULL));
-	
-	sqlite3_extended_result_codes(c, 1);
-	db_check(sqlite3_prepare_v2(c, "BEGIN", 5,
-															 &begin,
-															 NULL));
-	db_check(sqlite3_prepare_v2(c, "COMMIT", 6,
-															 &commit,
-															 NULL));
-	db_check(sqlite3_prepare_v2(c, "ROLLBACK", 8,
-															&rollback,
-															NULL));
-	DB_OK;
-	return;
 }
 
 void db_once(sqlite3_stmt* stmt) {
@@ -105,14 +106,14 @@ void db_retransaction() {
 	if(dberr) {
 		db_once(rollback);
 		db->dberr = false;
-			
+
 		dberr = old; // or would sqlite itself defer the real error to rollback? XXX
 	} else {
 		db_once(commit);
 	}
 	db_once(begin);
 }
-	
+
 void db_close(void) {
 	if(in_transaction) {
 		if(dberr) {
@@ -121,11 +122,11 @@ void db_close(void) {
 			db_once(commit);
 		}
 	}
-			
+
 	sqlite3_finalize(begin);
 	sqlite3_finalize(commit);
 	sqlite3_finalize(rollback);
-	
+
 	int attempt = 0;
 	for(;attempt<10;++attempt) {
 		int res = sqlite3_close(c);
@@ -176,18 +177,18 @@ void db_execmanyn(const char* s, size_t l, result_handler on_res) {
 				on_res(res,i,stmt,s,sl,l); return; }
 		CHECK;
 		if(stmt == NULL) return; // just trailing comments, whitespace
-		
+
 		if(next != NULL) {
 			sl = next - s;
 		}
 
-		
+
 		res = sqlite3_step(stmt);
 		CHECK;
 		res = sqlite3_finalize(stmt);
 		CHECK;
 		if(on_res(res,i,stmt,s,sl,l)) return;
-		
+
 		if(next == NULL)
 			break;
 
@@ -195,7 +196,7 @@ void db_execmanyn(const char* s, size_t l, result_handler on_res) {
 		s = next;
 	}
 }
-		
+
 
 sqlite3_stmt* db_preparen(const char* s, size_t l) {
 	sqlite3_stmt* stmt = NULL;
@@ -216,7 +217,7 @@ int db_stepderp(sqlite3_stmt* stmt,const char* file, int line)
 	return db_checkderp(sqlite3_step(stmt),file, line);
 }
 #else
-int db_step(sqlite3_stmt* stmt)	
+int db_step(sqlite3_stmt* stmt)
 {
 	int res = db_check(sqlite3_step(stmt));
 	if(dberr) {

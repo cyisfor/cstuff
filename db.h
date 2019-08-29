@@ -4,9 +4,10 @@
 
 typedef sqlite3_int64 ident;
 
-typedef struct db {
+struct db {
 	sqlite3* c;
-} *db;
+};
+typedef struct db* db;
 
 db db_open(const char* path);
 db db_read(const char* path);
