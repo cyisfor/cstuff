@@ -16,28 +16,34 @@ struct db_open_params {
 	const char* path;
 	bool readonly;
 };
-
 db db_open_f(struct db_open_params);
-#define db_open(...) { struct db_open_params params = {...}; db_open_f(params); }
-void db_close(db);
+#define db_open(...) ({									\
+		struct db_open_params params = {__VA_ARGS__};	\
+		db_open_f(params);								\
+	})
+void db_close(db db);
+size_t db_stmt_changes(db db);
+
+typedef struct db_stmt *db_stmt;
 
 #define db_prepare(lit) db_prepare_str(LITSTR(lit));
-sqlite3_stmt* db_prepare_str(string sql);
-
+db_stmt db_prepare_str(string sql);
+void db_reset(db_stmt stmt);
+void db_finalize(db_stmt stmt);
+void db_once(db_stmt stmt);
+int db_step(db_stmt stmt);
+size_t db_stmt_changes(db_stmt stmt);
+/* insert, update or delete */
+static int db_change(db_stmt stmt) {
+	ensure_eq(SQLITE_DONE, db_step(stmt));
+	return db_stmt_changes(stmt);
+}
 
 // this is just to be easier to read...
 #define DB_BIND(type,stmt,column,...) sqlite3_bind_ ## type(stmt, column, ## __VA_ARGS__)
 
 int db_check(int res);
-int db_step(sqlite3_stmt* stmt);
 
-#define DB_OK(db) if(db->dberr != 0) abort();
-
-void db_once(sqlite3_stmt* stmt);
-
-/* insert, update or delete */
-static
-int db_change(sqlite3_stmt* stmt);
 
 #define db_exec(lit) db_exec_str(LITSTR(lit))
 int db_exec_str(string sql);
@@ -66,5 +72,5 @@ void db_retransaction(void);
 #define TRANSACTION db_begin(); DEFER { if(dberr) db_rollback() else db_commit(); }
 
 
-bool db_has_tablen(const char* table, size_t n);
-#define db_has_table(lit) db_has_tablen(LITLEN(lit))
+bool db_has_table_str(string);
+#define db_has_table(lit) db_has_table_str(LITSTR(lit))

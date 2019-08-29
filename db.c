@@ -16,6 +16,7 @@ struct dbpriv {
 	struct db public;
 	sqlite3* sqlite;
 	sqlite3_stmt *begin, *commit, *rollback;
+	sqlite3_stmt *has_table;
 	int transaction_depth;
 };
 
@@ -234,16 +235,12 @@ db_stmt db_prepare_str(db public, string sql) {
 
 	db_stmt dbstmt = calloc(1, sizeof(*dbstmt));
 	dbstmt->sqlite = stmt;
-	dbstmt->db = public;
+	dbstmt->db = (dbpriv)public;
 	return dbstmt;
 }
 
 int db_step(db_stmt stmt) {
-	int res = db_check(sqlite3_step(stmt));
-	if(db->public.dberr) {
-		fprintf(stderr,"stepping over %s\n",sqlite3_sql(stmt));
-	}
-	return res;
+	return db_check(stmt->db, sqlite3_step(stmt->sqlite));
 }
 
 void db_reset(db_stmt stmt) {
@@ -254,21 +251,28 @@ void db_finalize(db_stmt stmt) {
 	free(stmt);
 }
 
-ident db_lastrow(void) {
-	return sqlite3_last_insert_rowid(c);
+ident db_lastrow(db db) {
+	return sqlite3_last_insert_rowid(((dbpriv)db)->c);
 }
 
-
-
-bool db_has_tablen(const char* table, size_t n) {
-	static sqlite3_stmt	*has_table = NULL;
-	if(!has_table) {
-		has_table = db_prepare(
-			"SELECT name FROM sqlite_master WHERE type='table' AND name=?");
+bool db_has_table_str(db db, const char* table, size_t n) {
+	dbpriv priv = (dbpriv)db;
+	if(!db->has_table) {
+		db->has_table = prepare(priv->c,
+								LITSTR("SELECT name FROM sqlite_master "
+									   "WHERE type='table' AND name=?"));
 	}
-	sqlite3_bind_text(has_table,1,table,n,NULL);
+	sqlite3_bind_text(db->has_table,1,table,n,NULL);
 	// can't use db_once because we expect SQLITE_ROW
-	int res = db_check(sqlite3_step(has_table));
-	sqlite3_reset(has_table);
+	int res = db_check(priv, sqlite3_step(db->has_table));
+	sqlite3_reset(db->has_table);
 	return res == SQLITE_ROW;
+}
+
+size_t db_stmt_changes(db_stmt stmt) {
+	return sqlite3_changes(stmt->db->sqlite);
+}
+
+size_t db_total_changes(db db) {
+	return sqlite3_total_changes(((dbpriv)db)->sqlite);
 }
