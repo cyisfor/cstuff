@@ -39,8 +39,8 @@ void db_once(sqlite3_stmt* stmt);
 static
 int db_change(sqlite3_stmt* stmt);
 
-#define db_exec(st) db_execn(st.s,st.l)
-int db_execn(const char* s, size_t l);
+#define db_exec(lit) db_exec_str(LITSTR(lit))
+int db_exec_str(string sql);
 
 #define RESULT_HANDLER(name) \
 	bool name(int res, int n, sqlite3_stmt* stmt, string sql, string tail)

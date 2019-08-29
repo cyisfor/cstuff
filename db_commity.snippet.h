@@ -44,6 +44,13 @@ int FUNCNAME(dbpriv db) {
 	return res;
 }
 
+EXPORT
+void CONCATSYM(db_, FUNCNAME)(db db) {
+	dbpriv priv = (dbpriv)db;
+	db_check(priv, FUNCNAME(priv));
+}
+/* defines db_release, db_savepoint, db_rollback */
+
 #undef FUNCNAME
 #undef FULL_COMMIT
 #undef COMMIT_PREFIX

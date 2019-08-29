@@ -27,6 +27,31 @@ typedef struct db_stmt {
 typedef struct dbpriv* dbpriv;
 
 static
+sqlite3_stmt* prepare(sqlite3* c, string sql) {
+	sqlite3_stmt* stmt
+	const char* db_next = NULL;
+	int res = sqlite3_prepare_v2(
+		c,
+		sql.base,
+		sql.len,
+		&stmt,
+		&db_next);
+	if(db_next && db_next - sql.base != sql.len) {
+		string tail = {
+			.base = db_next,
+			.len = sql.len - (db_next - sql.base)
+		};
+		record(WARNING, "some sql wouldn't prepare #.*s",
+			   STRING_FOR_PRINTF(tail));
+	}
+	if(res != SQLITE_OK) {
+		record(ERROR, "preparing %.*s",
+			   STRING_FOR_PRINTF(sql));
+	}
+	return stmt;
+}
+
+static
 db open_with_flags(const char* path, int flags) {
 	dbpriv db = calloc(1,sizeof(struct dbpriv));
 
@@ -54,19 +79,35 @@ db db_open_f(struct db_params params) {
 
 #define FUNCNAME rollback
 #define FULL_COMMIT rollback
-#define COMMIT_PREFIX "ROLLBACK TO save"
+#define COMMIT_PREFIX "ROLLBACK TO s"
 #include "db_commity.snippet.h"
 
 #define FUNCNAME release
 #define FULL_COMMIT commit
-#define COMMIT_PREFIX "RELEASE TO save"
+#define COMMIT_PREFIX "RELEASE TO s"
 #include "db_commity.snippet.h"
 
 #define FUNCNAME savepoint
 #define FULL_COMMIT begin
-#define COMMIT_PREFIX "SAVEPOINT save"
+#define COMMIT_PREFIX "SAVEPOINT s"
 #define INCREMENT
 #include "db_commity.snippet.h"
+
+static
+int full_commit(dbpriv db) {
+	if(db->transaction_level == 0) {
+		record(ERROR, "No transaction, so why are we committing?");
+	}
+	int res = sqlite3_step(db->commit);
+	sqlite3_reset(db->commit);
+	db->transaction_level = 0;
+	return res;
+}
+
+EXPORT
+void db_full_commit(db db) {
+	db_check((dbpriv)db, full_commit((dbpriv)db));
+}
 
 int db_check(dbpriv db, int res)
 {
@@ -79,7 +120,7 @@ int db_check(dbpriv db, int res)
 	if(db->transaction_depth > 0) {
 		int res = release(db);
 		if(res != SQLITE_DONE) {
-			record(WARNING, "Couldn't rollback! %d %s", res,
+			record(WARNING, "Couldn't release! %d %s", res,
 				   sqlite3_errmsg(res));
 		}
 	}
@@ -94,83 +135,56 @@ void db_once(db_stmt stmt) {
 	sqlite3_reset(stmt->sqlite);
 }
 
-void db_begin(db public) {
-	dbpriv priv = (dbpriv)public;
-	if(priv->in_transaction) {
-		//db_retransaction() <- will use the innermost nested transaction, not the outermost one
+void db_retransaction(db db) {
+	if(((dbpriv)db)->transaction_level == 0) {
 		return;
 	}
-	priv->in_transaction = true;
-	db_once(begin);
+	db_release(db);
+	db_savepoint(db);
 }
 
-void db_commit() {
-	if(!in_transaction) return;
-	db_once(commit);
-	in_transaction = false;
-}
-
-void db_rollback() {
-	if(!in_transaction) return;
-	db_once(rollback);
-	in_transaction = false;
-}
-
-void db_retransaction() {
-	if(!in_transaction) return;
-	if(db->public.dberr) {
-		db_once(rollback);
-		db->public.dberr = false;
-	} else {
-		db_once(commit);
-	}
-	db_once(begin);
-}
-
-void db_close(void) {
-	if(in_transaction) {
-		if(db->public.dberr) {
-			db_once(rollback);
-		} else {
-			db_once(commit);
-		}
+void db_close(db db) {
+	dbpriv priv = (dbpriv)db;
+	if(priv->transaction_level > 0) {
+		full_commit(priv);
 	}
 
-	sqlite3_finalize(begin);
-	sqlite3_finalize(commit);
-	sqlite3_finalize(rollback);
+	sqlite3_finalize(priv->begin);
+	sqlite3_finalize(priv->commit);
+	sqlite3_finalize(priv->rollback);
 
 	int attempt = 0;
 	for(;attempt<10;++attempt) {
-		int res = sqlite3_close(c);
-		if(res == SQLITE_OK) return;
-		printf("sqlite close error %s %s\n", sqlite3_errstr(res), sqlite3_errmsg(c));
+		int res = sqlite3_close(priv->c);
+		if(res == SQLITE_OK) {
+			free(priv);
+			return;
+		}
+		record(WARNING, "sqlite close error %s %s",
+			   sqlite3_errstr(res), sqlite3_errmsg(priv->c));
 		if(attempt > 1) {
 			sleep(attempt);
 		}
 		sqlite3_stmt* stmt = NULL;
-		while((stmt = sqlite3_next_stmt(c, stmt))) {
-			printf("closing statement\n%s\n",sqlite3_sql(stmt));
+		while((stmt = sqlite3_next_stmt(priv->c, stmt))) {
+			record(WARNING,
+				   "closing statement\n%s\n",sqlite3_sql(stmt));
 			db_check(sqlite3_finalize(stmt));
 		}
 	}
-	error(23,23,"could not close the database");
+	record(ERROR,"could not close the database");
 }
 
-static int asht(void* ctx, int cols,char** vals,char** names) {
-	printf("uh %d\n",cols);
-}
-
-void db_load(const char* path, result_handler on_res) {
+void db_load(db db, const char* path, result_handler on_res) {
 	size_t len = 0;
-	const char* sql = mmapfile(path,&len);
-	char* errmsg = NULL;
-	db_execmanyn(sql, len, on_res);
-	munmap((void*)sql, len);
+	ncstring sql = {};
+	sql.base = mmapfile(path,&sql.len);
+	db_execmanyn(db, sql, on_res);
+	munmap((void*)sql.base, sql.len);
 }
 
-int db_execn(const char* s, size_t l) {
-	sqlite3_stmt* stmt = db_preparen(s,l);
+int db_exec_str(db db, string sql) {
+	sqlite3_stmt* stmt = prepare(db->sqlite, sql);
 	int res = sqlite3_step(stmt);
 	sqlite3_finalize(stmt);
 	return res;
@@ -193,7 +207,7 @@ result db_execmany(db public, string tail, result_handler on_res) {
 #define CHECK															\
 		if(res != SQLITE_OK) {											\
 			if(on_res)													\
-				return on_res(res,i,stmt,cur, sql);				\
+				return on_res(res,i,stmt,cur, sql);						\
 			return fail;												\
 		}
 		CHECK;
@@ -214,31 +228,6 @@ result db_execmany(db public, string tail, result_handler on_res) {
 	}
 }
 
-static
-sqlite3_stmt* prepare(sqlite3* c, string sql) {
-	sqlite3_stmt* stmt
-	const char* db_next = NULL;
-	int res = sqlite3_prepare_v2(
-		c,
-		sql.base,
-		sql.len,
-		&stmt,
-		&db_next);
-	if(db_next && db_next - sql.base != sql.len) {
-		string tail = {
-			.base = db_next,
-			.len = sql.len - (db_next - sql.base)
-		};
-		record(WARNING, "some sql wouldn't prepare #.*s",
-			   STRING_FOR_PRINTF(tail));
-	}
-	if(res != SQLITE_OK) {
-		record(ERROR, "preparing %.*s",
-			   STRING_FOR_PRINTF(sql));
-	}
-	return stmt;
-}
-
 db_stmt db_prepare_str(db public, string sql) {
 	sqlite3* c = ((dbpriv)public)->c;
 	sqlite3_stmt* stmt = prepare(c, sql);
@@ -257,6 +246,13 @@ int db_step(db_stmt stmt) {
 	return res;
 }
 
+void db_reset(db_stmt stmt) {
+	db_check(stmt->db,sqlite3_reset(stmt->sqlite));
+}
+void db_finalize(db_stmt stmt) {
+	db_check(stmt->db,sqlite3_finalize(stmt->sqlite));
+	free(stmt);
+}
 
 ident db_lastrow(void) {
 	return sqlite3_last_insert_rowid(c);
