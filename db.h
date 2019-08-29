@@ -40,39 +40,32 @@ static int db_change(db_stmt stmt) {
 	return db_stmt_changes(stmt);
 }
 
-#define TYPE blob
-#define BIND_ARGS const void* blob, int len, void(*)(void*)destructor
-#define COLUMN_RETURN const void*
-#include "db_types.snippet.h"
-
 int db_check(int res);
 
-#define db_exec(lit) db_exec_str(LITSTR(lit))
-int db_exec_str(string sql);
+#define db_exec(db, lit) db_exec_str(db, LITSTR(lit))
+int db_exec_str(db db, string sql);
 
 #define RESULT_HANDLER(name) \
 	bool name(int res, int n, sqlite3_stmt* stmt, string sql, string tail)
 
 typedef RESULT_HANDLER((*result_handler));
 
-extern result_handler default_result_handler;
+void db_execmany(db db, string sql, result_handler on_err);
 
-void db_execmany(string sql, result_handler on_err);
+void db_load(db db, const char* path, result_handler on_res);
 
-void db_load(const char* path, result_handler on_res);
+ident db_lastrow(db db);
 
-extern const char* db_next; // ehhh
-
-ident db_lastrow(void);
-
-void db_begin(void);
-void db_commit(void);
-void db_retransaction(void);
+void db_savepoint(db db);
+void db_release(db db);
+void db_rollback(db db);
+void db_retransaction(db db);
 
 #include "defer.h"
 
-#define TRANSACTION db_begin(); DEFER { if(dberr) db_rollback() else db_commit(); }
+#define TRANSACTION(db) db_savepoint(db); DEFER { db_release(db) }
 
+bool db_has_table_str(db db, string table_name);
+#define db_has_table(db, lit) db_has_table_str(db, LITSTR(lit))
 
-bool db_has_table_str(string);
-#define db_has_table(lit) db_has_table_str(LITSTR(lit))
+#include "db_all_types.snippet.h"

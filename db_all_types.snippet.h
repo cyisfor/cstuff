@@ -1,8 +1,6 @@
 #ifndef DB_ALL_TYPES_SNIPPET_H
 #define DB_ALL_TYPES_SNIPPET_H
-
 #include "concatsym.h"
-
 #include <stdint.h> // uint64_t
 
 #define TYPE blob

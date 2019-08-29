@@ -78,15 +78,27 @@ db db_open_f(struct db_params params) {
 						   (SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE));
 }
 
-#define FUNCNAME rollback
+#define FUNCNAME base_rollback
 #define FULL_COMMIT rollback
 #define COMMIT_PREFIX "ROLLBACK TO s"
 #include "db_commity.snippet.h"
 
-#define FUNCNAME release
+int rollback(dbpriv db) {
+	db->error = 0;
+	return base_rollback(db);
+}
+
+#define FUNCNAME base_release
 #define FULL_COMMIT commit
 #define COMMIT_PREFIX "RELEASE TO s"
 #include "db_commity.snippet.h"
+
+int release(dbpriv db) {
+	if(db->error) {
+		return rollback(db);
+	}
+	return base_release(db);
+}
 
 #define FUNCNAME savepoint
 #define FULL_COMMIT begin
@@ -240,6 +252,9 @@ db_stmt db_prepare_str(db public, string sql) {
 }
 
 int db_step(db_stmt stmt) {
+	if(stmt->db->error) {
+		record(ERROR, "tried to do something without rolling back!");
+	}
 	return db_check(stmt->db, sqlite3_step(stmt->sqlite));
 }
 
@@ -259,7 +274,7 @@ bool db_has_table_str(db db, const char* table, size_t n) {
 	dbpriv priv = (dbpriv)db;
 	if(!db->has_table) {
 		db->has_table = prepare(priv->c,
-								LITSTR("SELECT name FROM sqlite_master "
+								LITSTR("SELECT 1 FROM sqlite_master "
 									   "WHERE type='table' AND name=?"));
 	}
 	sqlite3_bind_text(db->has_table,1,table,n,NULL);

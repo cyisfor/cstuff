@@ -16,7 +16,7 @@ int BIND_NAME(TYPE)(db_stmt stmt, int col, BIND_ARGS) {
 }
 EXPORT
 COLUMN_RETURN COL_NAME(TYPE)(db_stmt stmt, int col) {
-	return SQLITE_COL_NAME(TYPE)(stmt, col);
+	return SQLITE_COL_NAME(TYPE)(stmt->sqlite, col);
 }
 #undef SQLITE_BIND_NAME
 #undef SQLITE_COL_NAME
