@@ -47,7 +47,7 @@
 enum N(state) {
 	N(CONSTANT), // we know the string will never be freed
 		N(TRANSIENT), // we have to make sure it isn't freed elsewhere
-		N(FREEABLE) // we can free it here, and it's not used elsewhere.
+		N(OWNED) // we can free it here, and it's not used elsewhere.
 		};
 
 typedef struct N(string) {
@@ -63,16 +63,19 @@ static void N(nullendify)(const N(string)* str) {
 	}
 	// we need to make a copy of it regardless, to make room for the \0
 	char* copy;
-	if(str->state == N(FREEABLE)) {
+	if(str->state == N(OWNED)) {
 		// WARNING: this will make any transient strings of this one point to
 		// freed memory!
+		// TODO: a counter of how many current transients, to prevent
+		// freeing an owned string
 		copy = realloc(str->s, str->l+1);
 	} else {
 		copy = malloc(str->l+1);
 		memcpy(copy,str.s,str.l);
 	}
 	copy[str.l] = '\0';
-	if(str->state == N(FREEABLE)) {
+	if(str->state == N(OWNED)) {
+		/* XXX: and if no transients exist... refcounting? */
 		free(str->s);
 	}
 	str->s = copy;
@@ -88,7 +91,7 @@ static void N(ensure)(const N(string)* str) {
 	char* buf = malloc(str->l);
 	memcpy(buf,str->s,str->l);
 	str->s = buf;
-	str->state = N(FREEABLE);
+	str->state = N(OWNED);
 }
 
 static N(string) N(take)(N(string)* str) {
@@ -102,14 +105,14 @@ static N(string) N(take)(N(string)* str) {
 
 static N(string) N(copy)(const N(string) str) {
 	N(string) ret = str;
-	if(ret.state == N(FREEABLE)) {
+	if(ret.state == N(OWNED)) {
 		ret.state = N(TRANSIENT);
 	}
 	return ret;
 }
 
 static void N(clear)(N(string)* str) {
-	if(str->state == N(FREEABLE)) {
+	if(str->state == N(OWNED)) {
 		free((char*)str->s);
 	}
 	str->s = NULL;
@@ -120,10 +123,10 @@ static void N(clear)(N(string)* str) {
 static void N(replace)(N(string)* dest, const N(string) src) {
 	if(dest->s != src.s) { // XXX: will this screw things up sometimes?
 		char* destbuf;
-		if(dest->state == N(FREEABLE)) {
+		if(dest->state == N(OWNED)) {
 			destbuf = realloc((char*)dest->s, src.l);
 		} else {
-			dest->state = N(FREEABLE);
+			dest->state = N(OWNED);
 			destbuf = malloc(src.l);
 		}
 		memcpy(destbuf, src.s, src.l);
@@ -142,7 +145,7 @@ void foo(void) {
 	}, bar2 = {
 		.s = strdup("derp"),
 		.l = 5,
-		.state = N(FREEABLE)
+		.state = N(OWNED)
 	};
 	ownable_string bar3 = ownable_copy(bar2);
 	foobar(bar1,&bar2,bar3);

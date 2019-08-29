@@ -154,4 +154,14 @@ const byte* ZSTR(const string st) {
 
 #define AUTO_BSTRING(name,value) DEFER(bstring name = value) { strclear(&name); }
 
+static
+ncstring string_copy(const string str) {
+	ncstring ret = {
+		.base = malloc(str.len),
+		.len = str.len
+	};
+	memcpy(ret.base, str.base, str.len);
+	return ret;
+}
+
 #endif /* _MYSTRING_H_ */
