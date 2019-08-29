@@ -1,4 +1,5 @@
 #include "db.h"
+#include "itoa.h"
 #include "mmapfile.h"
 #include "mystring.h"
 
@@ -15,8 +16,14 @@ struct dbpriv {
 	struct db public;
 	sqlite3* sqlite;
 	sqlite3_stmt *begin, *commit, *rollback;
-	bool in_transaction;
+	int transaction_depth;
 };
+
+typedef struct db_stmt {
+	struct dbpriv* db;
+	sqlite3_stmt* sqlite;
+} *db_stmt;
+
 typedef struct dbpriv* dbpriv;
 
 static
@@ -38,15 +45,28 @@ db open_with_flags(const char* path, int flags) {
 	return (db)db;
 }
 
-db db_open(const char* path) {
-	return open_with_flags(path,
-						   SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE);
+db db_open_f(struct db_params params) {
+	return open_with_flags(params.path,
+						   params.readonly ?
+						   SQLITE_OPEN_READONLY :
+						   (SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE));
 }
 
-db db_read(const char* path) {
-	return open_with_flags(path,
-						   SQLITE_OPEN_READONLY);
-}
+#define FUNCNAME rollback
+#define FULL_COMMIT rollback
+#define COMMIT_PREFIX "ROLLBACK TO save"
+#include "db_commity.snippet.h"
+
+#define FUNCNAME release
+#define FULL_COMMIT commit
+#define COMMIT_PREFIX "RELEASE TO save"
+#include "db_commity.snippet.h"
+
+#define FUNCNAME savepoint
+#define FULL_COMMIT begin
+#define COMMIT_PREFIX "SAVEPOINT save"
+#define INCREMENT
+#include "db_commity.snippet.h"
 
 int db_check(dbpriv db, int res)
 {
@@ -56,8 +76,12 @@ int db_check(dbpriv db, int res)
 	case SQLITE_DONE:
 		return res;
 	};
-	if(db->in_transaction) {
-		db_rollback(&db->public);
+	if(db->transaction_depth > 0) {
+		int res = release(db);
+		if(res != SQLITE_DONE) {
+			record(WARNING, "Couldn't rollback! %d %s", res,
+				   sqlite3_errmsg(res));
+		}
 	}
 	record(ERROR, "sqlite error %s (%s)\n",
 			sqlite3_errstr(res), sqlite3_errmsg(db->sqlite));
@@ -70,14 +94,13 @@ void db_once(db_stmt stmt) {
 	sqlite3_reset(stmt->sqlite);
 }
 
-bool in_transaction = false;
-
-void db_begin() {
-	if(in_transaction) {
+void db_begin(db public) {
+	dbpriv priv = (dbpriv)public;
+	if(priv->in_transaction) {
 		//db_retransaction() <- will use the innermost nested transaction, not the outermost one
 		return;
 	}
-	in_transaction = true;
+	priv->in_transaction = true;
 	db_once(begin);
 }
 
