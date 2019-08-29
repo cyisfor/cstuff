@@ -50,6 +50,7 @@ void db_commit(void);
 void db_retransaction(void);
 
 string db_column_string(db_stmt stmt, int col);
+#define db_column_ident sqlite3_column_int64
 
 #include "defer.h"
 
