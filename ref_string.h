@@ -8,38 +8,65 @@
 	avoid struct copying
 */
 
+#include "mystring.h"
+
 #include <string.h> // memcpy
 #include <stdio.h> // snprintf
 #include <stdlib.h> // malloc
 #include <stdbool.h>
 
 #ifndef N
-// "#define namespace" to have no namespace (i.e. string)
-#  ifndef namespace
-#  define namespace ref_
-#  endif
+#  define namespace rstring
 
 #  include "concatsym.h"
 
-#  define N(a) CONCATSYM(namespace,a)
+#  define N(a) CONCATSYM(CONCATSYM(namespace,_),a)
+#  define T namespace
 #endif
 
 #define REF_IS_STATIC 0
 #define REF_IS_ONLY_REF 1
 /* refcounter is not 1 high, because a non-static ref will be converted to
    static when its refs goes to 0, setting base to NULL
+   base should never be NULL if refs is not 0
 */
 
-typedef struct N(string) {
+typedef struct T {
 	char* s;
 	size_t l;
 	unsigned int refs; 		/* do we ever need more than 4 billion refs? */
-} *N(string);
+} *T;
 
-/* str MAY be mutated (if no other refs to it)
-   will always return a string ending in \0
+static
+T N(from_C)(const char* base, size_t len) {
+	T ret = malloc(str.l);
+	memcpy(ret->base, str.base, str.l);
+	ret->refs = 1;
+	return ret;
+}
+
+static
+T N(from)(const string str) {
+	return N(from_C)(str.base, str.len);
+}
+
+static
+struct T N(from_static_f)(const char* base, size_t len) {
+	struct T str = {
+		.base = base,
+		.len = len
+		.refs = REF_IS_STATIC
+	};
+	return str;
+}
+/* ugh, cpp... */
+#define rstring_static(lit) rstring_from_static_f(LITLEN(lit))
+
+/* will always return a string ending in \0
+   str MAY be mutated (if no other refs to it)
 */
-static N(string) N(nullendify)(N(string) str) {
+static
+T N(nullendify)(T str) {
 	if(str->refs == REF_IS_STATIC) {
 		/* this is the only time str->base may be null */
 		if(str->base == NULL) return str;
@@ -51,33 +78,33 @@ static N(string) N(nullendify)(N(string) str) {
 	// we need to make a copy of it regardless, to make room for the \0
 	char* copy;
 	if(str->refs == REF_IS_ONLY_REF) {
-		copy = realloc(str->base, str->len+1);
+		str->base = realloc(str->base, ++str->len);
 	} else {
-		copy = malloc(str->len+1);
-		memcpy(copy,str->base,str->len);
+		T* new = malloc(sizeof(struct T));
+		new->base = malloc(str->len+1);
+		memcpy(new->base,str->base,str->len);
 		if(str->refs != REF_IS_STATIC) {
 			N(unref)(str);
 		}
-		N(string)* new = malloc(sizeof(struct N(string)));
 		new->refs = 1;
-		new->len = str->len;
+		new->len = str->len+1;
 		str = new;
 		/* we can't mutate the argument anymore... */
 	}
-	copy[str->len] = '\0';
-	str->base = copy;
-	str->len += 1;
+	str->base[str->len-1] = '\0';
 	return str;
 }
 
-static N(string) N(copy)(N(string) str) {
+static
+T N(copy)(T str) {
 	if(str->refs != REF_IS_STATIC) {
 		++str->refs;
 	}
 	return str;
 }
 
-static void N(unref)(N(string) str) {
+static
+void N(unref)(T str) {
 	if(str->refs == REF_IS_STATIC) {
 		record(WARNING, "Unref a static string? %.*s",
 			   STRING_FOR_PRINTF(*str));
