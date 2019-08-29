@@ -3,7 +3,7 @@
 
 typedef enum result {
 	fail,
-	succeed
+	succeed,
 } result;
 
 #endif /* RESULT_H */

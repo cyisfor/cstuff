@@ -155,55 +155,67 @@ int db_execn(const char* s, size_t l) {
 	return res;
 }
 
-result db_execmanyn(db public, const char* s, size_t l, result_handler on_res) {
-	dbpriv priv = (dbpriv)public;
+result db_execmany(db public, string tail, result_handler on_res) {
+	sqlite3* c = ((dbpriv)public)->c;
 	db_stmt stmt = NULL;
 	const char* next = NULL;
 	int i = 0;
 	for(;;++i) {
-		size_t sl = l;
-		int res = sqlite3_prepare_v2(c, s, l,
+		string cur = {
+			.base = tail.base,
+			.len = 0;
+		};
+		int res = sqlite3_prepare_v2(priv->c,
+									 tail.base, tail.len,
 									 &stmt,
 									 &next);
-#define CHECK \
-		if(res != SQLITE_OK && res != SQLITE_DONE && res != SQLITE_ROW) { \
+#define CHECK															\
+		if(res != SQLITE_OK) {											\
 			if(on_res)													\
-				on_res(res,i,stmt,s,sl,l);								\
+				return on_res(res,i,stmt,cur, sql);				\
 			return fail;												\
 		}
 		CHECK;
 		if(stmt == NULL) return true; // just trailing comments, whitespace
-
 		if(next != NULL) {
-			sl = next - s;
+			cur.len = next - tail.base;
+			tail.len -= cur.len;
+			tail.base = next;
 		}
-
 		res = sqlite3_step(stmt);
 		CHECK;
 		res = sqlite3_finalize(stmt);
 		CHECK;
 		if(on_res)
-			if(false == on_res(res,i,stmt,s,sl,l)) return false;
-
+			if(fail == on_res(res,i,stmt,cur,sql)) return fail;
 		if(next == NULL)
-			break;
-
-		l -= next - s;
-		s = next;
+			return succeed;
 	}
 }
 
 
-sqlite3_stmt* db_preparen(const char* s, size_t l) {
+sqlite3_stmt* db_prepare_str(db public, string sql) {
+	sqlite3* c = ((dbpriv)public)->c;
 	sqlite3_stmt* stmt = NULL;
-	db_check(sqlite3_prepare_v2(c, s, l,
-															&stmt,
-															&db_next));
-	if(db->public.dberr) {
-		fprintf(stderr,"preparing %.*s\n",l,s);
-		return NULL;
+	const char* db_next = NULL;
+	int res = sqlite3_prepare_v2(
+		c,
+		sql.base,
+		sql.len,
+		&stmt,
+		&db_next);
+	if(db_next && db_next - sql.base != sql.len) {
+		string tail = {
+			.base = db_next,
+			.len = sql.len - (db_next - sql.base)
+		};
+		record(WARNING, "some sql wouldn't prepare #.*s",
+			   STRING_FOR_PRINTF(tail));
 	}
-
+	if(res != SQLITE_OK) {
+		record(ERROR, "preparing %.*s",
+			   STRING_FOR_PRINTF(sql));
+	}
 	return stmt;
 }
 

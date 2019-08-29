@@ -1,3 +1,6 @@
+#include "result.h"
+#include "mystring.h"
+
 #include <sqlite3.h>
 #include <stdlib.h> // size_t
 #include <stdbool.h>
@@ -12,6 +15,9 @@ typedef struct db* db;
 db db_open(const char* path);
 db db_read(const char* path);
 void db_close(db);
+
+#define db_prepare(lit) db_prepare_str(LITSTR(lit));
+sqlite3_stmt* db_prepare_str(string sql);
 
 // this is just to be easier to read...
 #define DB_BIND(type,stmt,column,...) sqlite3_bind_ ## type(stmt, column, ## __VA_ARGS__)
@@ -31,20 +37,17 @@ int db_change(sqlite3_stmt* stmt);
 int db_execn(const char* s, size_t l);
 
 #define RESULT_HANDLER(name) \
-	bool name(int res, int n, sqlite3_stmt* stmt, const char* tail, size_t sl, size_t l)
+	bool name(int res, int n, sqlite3_stmt* stmt, string sql, string tail)
 
 typedef RESULT_HANDLER((*result_handler));
 
 extern result_handler default_result_handler;
 
-#define db_execmany(st,on_err) db_execmanyn(st.s,st.l,on_err)
-void db_execmanyn(const char* s, size_t l, result_handler on_err);
+void db_execmany(string sql, result_handler on_err);
 
 void db_load(const char* path, result_handler on_res);
 
 extern const char* db_next; // ehhh
-#define db_prepare(lit) db_preparen(lit,sizeof(lit)-1);
-sqlite3_stmt* db_preparen(const char* s, size_t l);
 
 ident db_lastrow(void);
 
