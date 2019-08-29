@@ -15,10 +15,10 @@ struct dbpriv {
 	struct db public;
 	sqlite3* c;
 	sqlite3_stmt *begin, *commit, *rollback;
-	int dberr;
 };
 typedef struct dbpriv* dbpriv;
 
+static
 db open_with_flags(const char* path, int flags) {
 	dbpriv db = calloc(1,sizeof(struct dbpriv));
 
@@ -30,32 +30,26 @@ db open_with_flags(const char* path, int flags) {
 			flags | SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_PRIVATECACHE,
 			NULL));
 	sqlite3_extended_result_codes(db->c, 1);
-	db->begin = db_prepare(&db->public, "BEGIN");
-	db->commit = db_prepare(&db->public, "COMMIT");
-	db->rollback = db_prepare(&db->public, "ROLLBACK");
-	DB_OK;
-	return;
+	db->begin = db_prepare((db)db, "BEGIN");
+	db->commit = db_prepare((db)db, "COMMIT");
+	db->rollback = db_prepare((db)db, "ROLLBACK");
+	DB_OK(db);
+	return (db)db;
 }
 
-
-const char* db_next = NULL; // eh
-
-static bool derp(int res, int n, sqlite3_stmt* stmt, const char* tail, size_t sl, size_t l) {
-	if(res == SQLITE_OK || res == SQLITE_ROW || res == SQLITE_DONE) return false;
-	printf("uhh %d %d %d %d\n",res,SQLITE_OK,SQLITE_ROW,SQLITE_DONE);
-	fwrite(tail,1,sl,stderr);
-	fputc('\n',stderr);
-	db_check(res);
-	return false;
+db db_open(const char* path) {
+	return open_with_flags(path,
+						   SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE);
 }
 
-result_handler default_result_handler = &derp;
-
-int dberr = 0;
+db db_read(const char* path) {
+	return open_with_flags(path,
+						   SQLITE_OPEN_READONLY);
+}
 
 int db_check(db db, int res)
 {
-	if(dberr) {
+	if(db->public.dberr) {
 		fprintf(stderr, "check while erroring %s\n",sqlite3_errstr(res));
 	}
 	switch(res) {
@@ -68,7 +62,7 @@ int db_check(db db, int res)
 			"sqlite error %s (%s)\n",
 			sqlite3_errstr(res), sqlite3_errmsg(db));
 	fflush(stderr);
-	dberr = res;
+	db->public.dberr = res;
 	return res;
 }
 
@@ -103,11 +97,9 @@ void db_rollback() {
 
 void db_retransaction() {
 	if(!in_transaction) return;
-	if(dberr) {
+	if(db->public.dberr) {
 		db_once(rollback);
-		db->dberr = false;
-
-		dberr = old; // or would sqlite itself defer the real error to rollback? XXX
+		db->public.dberr = false;
 	} else {
 		db_once(commit);
 	}
@@ -116,7 +108,7 @@ void db_retransaction() {
 
 void db_close(void) {
 	if(in_transaction) {
-		if(dberr) {
+		if(db->public.dberr) {
 			db_once(rollback);
 		} else {
 			db_once(commit);
@@ -163,31 +155,35 @@ int db_execn(const char* s, size_t l) {
 	return res;
 }
 
-void db_execmanyn(const char* s, size_t l, result_handler on_res) {
-	if(on_res == NULL) on_res = default_result_handler;
-	sqlite3_stmt* stmt = NULL;
+result db_execmanyn(db public, const char* s, size_t l, result_handler on_res) {
+	dbpriv priv = (dbpriv)public;
+	db_stmt stmt = NULL;
 	const char* next = NULL;
 	int i = 0;
 	for(;;++i) {
 		size_t sl = l;
 		int res = sqlite3_prepare_v2(c, s, l,
-															&stmt,
-															&next);
-		#define CHECK if(res != SQLITE_OK && res != SQLITE_DONE && res != SQLITE_ROW) { \
-				on_res(res,i,stmt,s,sl,l); return; }
+									 &stmt,
+									 &next);
+#define CHECK \
+		if(res != SQLITE_OK && res != SQLITE_DONE && res != SQLITE_ROW) { \
+			if(on_res)													\
+				on_res(res,i,stmt,s,sl,l);								\
+			return fail;												\
+		}
 		CHECK;
-		if(stmt == NULL) return; // just trailing comments, whitespace
+		if(stmt == NULL) return true; // just trailing comments, whitespace
 
 		if(next != NULL) {
 			sl = next - s;
 		}
 
-
 		res = sqlite3_step(stmt);
 		CHECK;
 		res = sqlite3_finalize(stmt);
 		CHECK;
-		if(on_res(res,i,stmt,s,sl,l)) return;
+		if(on_res)
+			if(false == on_res(res,i,stmt,s,sl,l)) return false;
 
 		if(next == NULL)
 			break;
@@ -203,7 +199,7 @@ sqlite3_stmt* db_preparen(const char* s, size_t l) {
 	db_check(sqlite3_prepare_v2(c, s, l,
 															&stmt,
 															&db_next));
-	if(dberr) {
+	if(db->public.dberr) {
 		fprintf(stderr,"preparing %.*s\n",l,s);
 		return NULL;
 	}
@@ -220,7 +216,7 @@ int db_stepderp(sqlite3_stmt* stmt,const char* file, int line)
 int db_step(sqlite3_stmt* stmt)
 {
 	int res = db_check(sqlite3_step(stmt));
-	if(dberr) {
+	if(db->public.dberr) {
 		fprintf(stderr,"stepping over %s\n",sqlite3_sql(stmt));
 	}
 	return res;

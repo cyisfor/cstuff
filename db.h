@@ -5,7 +5,7 @@
 typedef sqlite3_int64 ident;
 
 struct db {
-	sqlite3* c;
+	int dberr;
 };
 typedef struct db* db;
 
@@ -14,15 +14,12 @@ db db_read(const char* path);
 void db_close(db);
 
 // this is just to be easier to read...
-#define BIND(type,stmt,column,...) sqlite3_bind_ ## type(stmt, column, ## __VA_ARGS__)
+#define DB_BIND(type,stmt,column,...) sqlite3_bind_ ## type(stmt, column, ## __VA_ARGS__)
 
 int db_check(int res);
 int db_step(sqlite3_stmt* stmt);
-#endif
 
-extern int dberr;
-
-#define DB_OK if(dberr != 0) abort();
+#define DB_OK(db) if(db->dberr != 0) abort();
 
 void db_once(sqlite3_stmt* stmt);
 
