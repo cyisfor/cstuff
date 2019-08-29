@@ -33,17 +33,19 @@ void db_finalize(db_stmt stmt);
 void db_once(db_stmt stmt);
 int db_step(db_stmt stmt);
 size_t db_stmt_changes(db_stmt stmt);
-/* insert, update or delete */
+
 static int db_change(db_stmt stmt) {
+/* insert, update or delete */
 	ensure_eq(SQLITE_DONE, db_step(stmt));
 	return db_stmt_changes(stmt);
 }
 
-// this is just to be easier to read...
-#define DB_BIND(type,stmt,column,...) sqlite3_bind_ ## type(stmt, column, ## __VA_ARGS__)
+#define TYPE blob
+#define BIND_ARGS const void* blob, int len, void(*)(void*)destructor
+#define COLUMN_RETURN const void*
+#include "db_types.snippet.h"
 
 int db_check(int res);
-
 
 #define db_exec(lit) db_exec_str(LITSTR(lit))
 int db_exec_str(string sql);

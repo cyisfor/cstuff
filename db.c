@@ -276,3 +276,6 @@ size_t db_stmt_changes(db_stmt stmt) {
 size_t db_total_changes(db db) {
 	return sqlite3_total_changes(((dbpriv)db)->sqlite);
 }
+
+#define IMPLEMENTATION
+#include "db_all_types.snippet.h"
