@@ -1,6 +1,8 @@
 #ifndef DB_ALL_TYPES_SNIPPET_H
 #define DB_ALL_TYPES_SNIPPET_H
 
+#include "concatsym.h"
+
 #include <stdint.h> // uint64_t
 
 #define TYPE blob
@@ -44,4 +46,10 @@
 #define BIND_ARGS uint64_t val
 #include "db_types.snippet.h"
 
+#undef BIND_ARGS
+#undef BIND_PARAMS
+#undef COLUMN_RETURN
+#ifdef IMPLEMENTATION
+#undef IMPLEMENTATION
+#endif
 #endif /* DB_ALL_TYPES_SNIPPET_H */
