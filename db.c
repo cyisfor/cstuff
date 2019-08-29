@@ -28,11 +28,7 @@ result_handler default_result_handler = &derp;
 
 int dberr = 0;
 
-#ifdef DEBUG
-int db_checkderp(int res, const char* func, int line)
-#else
-int db_check(int res)
-#endif
+int db_check(db db, int res)
 {
 	if(dberr) {
 		fprintf(stderr, "check while erroring %s\n",sqlite3_errstr(res));
@@ -44,14 +40,8 @@ int db_check(int res)
 		return res;
 	};
 	fprintf(stderr,
-#ifdef DEBUG
-		"%s%d"
-#endif
-		"sqlite error %s (%s)\n",
-#ifdef DEBUG
-		func, line,
-#endif
-		sqlite3_errstr(res), sqlite3_errmsg(c));
+			"sqlite error %s (%s)\n",
+			sqlite3_errstr(res), sqlite3_errmsg(db));
 	fflush(stderr);
 	dberr = res;
 	return res;
@@ -113,8 +103,9 @@ void db_rollback() {
 void db_retransaction() {
 	if(!in_transaction) return;
 	if(dberr) {
-		int old = dberr;
 		db_once(rollback);
+		db->dberr = false;
+			
 		dberr = old; // or would sqlite itself defer the real error to rollback? XXX
 	} else {
 		db_once(commit);
