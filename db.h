@@ -12,12 +12,18 @@ struct db {
 };
 typedef struct db* db;
 
-db db_open(const char* path);
-db db_read(const char* path);
+struct db_open_params {
+	const char* path;
+	bool readonly;
+};
+
+db db_open_f(struct db_open_params);
+#define db_open(...) { struct db_open_params params = {...}; db_open_f(params); }
 void db_close(db);
 
 #define db_prepare(lit) db_prepare_str(LITSTR(lit));
 sqlite3_stmt* db_prepare_str(string sql);
+
 
 // this is just to be easier to read...
 #define DB_BIND(type,stmt,column,...) sqlite3_bind_ ## type(stmt, column, ## __VA_ARGS__)

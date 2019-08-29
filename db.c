@@ -13,8 +13,9 @@
 
 struct dbpriv {
 	struct db public;
-	sqlite3* c;
+	sqlite3* sqlite;
 	sqlite3_stmt *begin, *commit, *rollback;
+	bool in_transaction;
 };
 typedef struct dbpriv* dbpriv;
 
@@ -26,13 +27,13 @@ db open_with_flags(const char* path, int flags) {
 	ensure_eq(
 		SQLITE_OK,
 		sqlite3_open_v2(
-			path, &db->c,
+			path, &db->sqlite,
 			flags | SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_PRIVATECACHE,
 			NULL));
-	sqlite3_extended_result_codes(db->c, 1);
-	db->begin = db_prepare((db)db, "BEGIN");
-	db->commit = db_prepare((db)db, "COMMIT");
-	db->rollback = db_prepare((db)db, "ROLLBACK");
+	sqlite3_extended_result_codes(db->sqlite, 1);
+	db->begin = prepare(db->sqlite, LITSTR("BEGIN"));
+	db->commit = prepare(db->sqlite, LITSTR("COMMIT"));
+	db->rollback = prepare(db->sqlite, LITSTR("ROLLBACK"));
 	DB_OK(db);
 	return (db)db;
 }
@@ -47,29 +48,26 @@ db db_read(const char* path) {
 						   SQLITE_OPEN_READONLY);
 }
 
-int db_check(db db, int res)
+int db_check(dbpriv db, int res)
 {
-	if(db->public.dberr) {
-		fprintf(stderr, "check while erroring %s\n",sqlite3_errstr(res));
-	}
 	switch(res) {
 	case SQLITE_OK:
 	case SQLITE_ROW:
 	case SQLITE_DONE:
 		return res;
 	};
-	fprintf(stderr,
-			"sqlite error %s (%s)\n",
-			sqlite3_errstr(res), sqlite3_errmsg(db));
-	fflush(stderr);
-	db->public.dberr = res;
+	if(db->in_transaction) {
+		db_rollback(&db->public);
+	}
+	record(ERROR, "sqlite error %s (%s)\n",
+			sqlite3_errstr(res), sqlite3_errmsg(db->sqlite));
 	return res;
 }
 
-void db_once(sqlite3_stmt* stmt) {
-	int res = db_check(sqlite3_step(stmt));
+void db_once(db_stmt stmt) {
+	int res = db_check(stmt->db, sqlite3_step(stmt->sqlite));
 	assert(res != SQLITE_ROW);
-	sqlite3_reset(stmt);
+	sqlite3_reset(stmt->sqlite);
 }
 
 bool in_transaction = false;
@@ -193,10 +191,9 @@ result db_execmany(db public, string tail, result_handler on_res) {
 	}
 }
 
-
-sqlite3_stmt* db_prepare_str(db public, string sql) {
-	sqlite3* c = ((dbpriv)public)->c;
-	sqlite3_stmt* stmt = NULL;
+static
+sqlite3_stmt* prepare(sqlite3* c, string sql) {
+	sqlite3_stmt* stmt
 	const char* db_next = NULL;
 	int res = sqlite3_prepare_v2(
 		c,
@@ -219,21 +216,24 @@ sqlite3_stmt* db_prepare_str(db public, string sql) {
 	return stmt;
 }
 
-#ifdef DEBUG
-int db_stepderp(sqlite3_stmt* stmt,const char* file, int line)
-{
-	return db_checkderp(sqlite3_step(stmt),file, line);
+db_stmt db_prepare_str(db public, string sql) {
+	sqlite3* c = ((dbpriv)public)->c;
+	sqlite3_stmt* stmt = prepare(c, sql);
+
+	db_stmt dbstmt = calloc(1, sizeof(*dbstmt));
+	dbstmt->sqlite = stmt;
+	dbstmt->db = public;
+	return dbstmt;
 }
-#else
-int db_step(sqlite3_stmt* stmt)
-{
+
+int db_step(db_stmt stmt) {
 	int res = db_check(sqlite3_step(stmt));
 	if(db->public.dberr) {
 		fprintf(stderr,"stepping over %s\n",sqlite3_sql(stmt));
 	}
 	return res;
 }
-#endif
+
 
 ident db_lastrow(void) {
 	return sqlite3_last_insert_rowid(c);
