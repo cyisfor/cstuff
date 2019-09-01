@@ -140,19 +140,9 @@ const byte* ZSTR(const string st) {
 
 #define CONCATSYM(a,b) a ## b
 
-#define DEFER_CLEANUP(init, cleanup)		\
-	auto int cleanup();							\
-	__attribute__((__cleanup__(cleanup)))		\
-	init;										\
-	auto int cleanup() 			/* define... */
+#include "defer.h"
 
-#define DEFER(init) DEFER_CLEANUP(init, CONCATSYM(cleanup,__COUNTER__))
-
-#define AUTO_BSTRING_CLEANUP(name, value, cleanup) { \
-		auto int cleanup();							 \
-	
-
-#define AUTO_BSTRING(name,value) DEFER(bstring name = value) { strclear(&name); }
+#define AUTO_BSTRING(name,value) bstring name = value; DEFER { strclear(&name); }
 
 static
 ncstring string_copy(const string str) {

@@ -3,4 +3,4 @@
 	char __attribute__((__cleanup__(name))) var; \
 	void name(void* nada)
 
-#define DEFER DEFERNAME(symjoin(cleanupfunc,__LINE__),symjoin(defervar,__LINE__))
+#define DEFER DEFERNAME(symjoin(cleanupfunc,__COUNTER__),symjoin(defervar,__COUNTER__))
