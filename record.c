@@ -1,0 +1,92 @@
+#include "record.h"
+#include <stdio.h>
+#include <stdarg.h> // VA_*
+
+static bool show_source = true;
+static bool show_timestamp = true;
+static bool plain_log = false;
+//static bool colorize = ?
+
+void record_init(void) {
+	if(getenv("no_source")) {
+		show_source = false;
+	}
+	if(getenv("no_timestamp")) {
+		show_timestamp = false;
+	}
+	if(getenv("plain_log")) {
+		plain_log = true;
+	}
+}
+
+void record_f(struct record_params p, const char* fmt, ...) {
+	va_list args;
+	va_start(args, fmt);
+	if(plain_log) {
+		if(show_timestamp) {
+			fprintf(stderr, "%d ", time(NULL));
+		}		
+		if(show_source) {
+			fputs(p.file, stderr);
+			fputc(':',stderr);
+			fprintf(stderr, "%d", p.line);
+			fputc(' ', stderr);
+		}
+		vfprintf(stderr, fmt, args);
+		va_end(args);
+		return;
+	}
+	// eliminate common prefix between note/note.c and whatever source file it is
+	size_t sourcelen = 0;
+	if(show_timestamp) {
+		sourcelen += fprintf(stderr, "%d ", time(NULL));
+	}
+	if (show_source) {
+		const char* myfile = __FILE__;
+		size_t mflen = LITSIZ(__FILE__);
+		size_t i;
+		if(mflen > p.flen) {
+			mflen = p.flen;
+		}
+		for(i=0;i<mflen;++i) {					
+			if(file[i] != myfile[i]) break;
+		}
+		if(i != p.flen) {
+			fwrite(p.file+i, p.flen-i, 1, stderr);
+			sourcelen += p.flen-i;
+		}
+		fputc(':',stderr);
+		++sourcelen;
+		sourcelen += fprintf(stderr, "%d", p.line);
+		fputc(' ', stderr);
+		++sourcelen;
+	}
+	static size_t maxsourcelen = 0;
+	/* align log right of source */
+	if(maxsourcelen < sourcelen) {
+		maxsourcelen = sourcelen;
+	} else {
+		int i;
+		for(i=0;i<maxsourcelen-sourcelen;++i) {
+			fputc(' ', stderr);
+		}
+	}
+	fputc(' ', stderr);
+
+	switch(p.level) {
+	case ERROR:
+		fwrite(LITLEN("ERROR "), 1, stderr);
+		break;
+	case WARNING:
+		fwrite(LITLEN("WARNING "), 1, stderr);
+		break;
+	case INFO:
+		fwrite(LITLEN("INFO "), 1, stderr);
+		break;
+	case DEBUG:
+		fwrite(LITLEN("DEBUG "), 1, stderr);
+		break;		
+	};
+	vfprintf(stderr, fmt, args);
+	va_end(args);
+}
