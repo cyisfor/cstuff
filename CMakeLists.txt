@@ -73,3 +73,10 @@ function(add_cstuff)
 	target_link_libraries(cstuff PUBLIC PkgConfig::GLIB)
   endif(want_path)
 endfunction(add_cstuff)
+
+if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
+  add_executable(test_record
+	test/test_record.c
+	record.c)
+  target_include_directories(test_record PRIVATE "${CMAKE_SOURCE_DIR}")
+endif()

@@ -1,6 +1,11 @@
 #include "record.h"
+#include "mystring.h"
 #include <stdio.h>
 #include <stdarg.h> // VA_*
+#include <stdlib.h> // abort
+#include <time.h> // 
+
+#include <stdbool.h>
 
 static bool show_source = true;
 static bool show_timestamp = true;
