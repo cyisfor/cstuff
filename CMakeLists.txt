@@ -31,6 +31,7 @@ function(add_cstuff)
   
   if(want_basedb)
 	set(want_mmapfile 1)
+	set(want_itoa 1)
 	sourcederp(db/base.c mmapfile.c record.c)
 	include(FindPkgConfig)
 	pkg_check_modules(SQLITE
@@ -80,7 +81,9 @@ endfunction(add_cstuff)
 if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
   add_cstuff(record basedb)
   add_executable(test_record
-	test/test_record.c
-	record.c)
-  target_include_directories(test_record PRIVATE "${CMAKE_SOURCE_DIR}")
+	test/test_record.c)
+  target_link_libraries(test_record PRIVATE cstuff)
+  add_executable(test_basedb
+	test/test_basedb.c)
+  target_link_libraries(test_basedb PRIVATE cstuff)
 endif()
