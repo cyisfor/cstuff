@@ -1,4 +1,9 @@
-#ifndef CONCATSYM
+#ifndef CONCATSYM_H
+#define CONCATSYM_H
+
 #define CONCATSYM(a,b) CONCATSYM2(a,b)
 #define CONCATSYM2(a,b) a ## b
-#endif
+
+#define STRIFY(a) #a
+
+#endif /* CONCATSYM_H */
