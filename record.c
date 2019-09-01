@@ -5,6 +5,7 @@
 static bool show_source = true;
 static bool show_timestamp = true;
 static bool plain_log = false;
+static bool abort_on_error = true;
 //static bool colorize = ?
 
 void record_init(void) {
@@ -16,6 +17,9 @@ void record_init(void) {
 	}
 	if(getenv("plain_log")) {
 		plain_log = true;
+	}
+	if(getenv("no_abort_on_error")) {
+		abort_on_error = false;
 	}
 }
 
@@ -89,4 +93,7 @@ void record_f(struct record_params p, const char* fmt, ...) {
 	};
 	vfprintf(stderr, fmt, args);
 	va_end(args);
+	if(abort_on_error && p.level == ERROR) {
+		abort();
+	}
 }
