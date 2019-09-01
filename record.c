@@ -7,15 +7,15 @@
 
 #include <stdbool.h>
 
-static bool show_source = true;
+static bool show_source = false;
 static bool show_timestamp = true;
 static bool plain_log = false;
 static bool abort_on_error = true;
 //static bool colorize = ?
 
 void record_init(void) {
-	if(getenv("no_source")) {
-		show_source = false;
+	if(getenv("show_source")) {
+		show_source = true;
 	}
 	if(getenv("no_timestamp")) {
 		show_timestamp = false;
@@ -33,7 +33,7 @@ void record_f(struct record_params p, const char* fmt, ...) {
 	va_start(args, fmt);
 	if(plain_log) {
 		if(show_timestamp) {
-			fprintf(stderr, "%d ", time(NULL));
+			fprintf(stderr, "%ld ", time(NULL));
 		}		
 		if(show_source) {
 			fputs(p.file, stderr);
@@ -48,9 +48,11 @@ void record_f(struct record_params p, const char* fmt, ...) {
 	// eliminate common prefix between note/note.c and whatever source file it is
 	size_t sourcelen = 0;
 	if(show_timestamp) {
-		sourcelen += fprintf(stderr, "%d ", time(NULL));
+		sourcelen += fprintf(stderr, "%ld", time(NULL));
 	}
 	if (show_source) {
+		fputc(' ',stderr);
+		++sourcelen;
 		const char* myfile = __FILE__;
 		size_t mflen = LITSIZ(__FILE__);
 		size_t i;
@@ -58,7 +60,7 @@ void record_f(struct record_params p, const char* fmt, ...) {
 			mflen = p.flen;
 		}
 		for(i=0;i<mflen;++i) {					
-			if(file[i] != myfile[i]) break;
+			if(p.file[i] != myfile[i]) break;
 		}
 		if(i != p.flen) {
 			fwrite(p.file+i, p.flen-i, 1, stderr);
@@ -98,6 +100,7 @@ void record_f(struct record_params p, const char* fmt, ...) {
 	};
 	vfprintf(stderr, fmt, args);
 	va_end(args);
+	fputc('\n',stderr);
 	if(abort_on_error && p.level == ERROR) {
 		abort();
 	}
