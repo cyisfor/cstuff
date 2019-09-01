@@ -3,7 +3,7 @@ project(cstuff VERSION 0.1)
 set(cstuff_source_dir "${CMAKE_CURRENT_SOURCE_DIR}" PARENT_SCOPE)
 
 function(add_cstuff)
-  set(options db itoa mmapfile pat aton become)
+  set(options basedb itoa mmapfile pat aton become record)
   cmake_parse_arguments(PARSE_ARGV 0 want "${options}" "" "")
 
   file(WRITE "${CMAKE_BINARY_DIR}/cmakesucks.c" "")
@@ -25,16 +25,19 @@ function(add_cstuff)
   if(want_become)
 	sourcederp(become.c)
   endif()
+  if(want_record)
+	sourcederp(record.c)
+  endif()
   
-  if(want_db)
+  if(want_basedb)
 	set(want_mmapfile 1)
-	sourcederp(db.c mmapfile.c)
+	sourcederp(db/base.c mmapfile.c record.c)
 	include(FindPkgConfig)
 	pkg_check_modules(SQLITE
 	  REQUIRED IMPORTED_TARGET
 	  sqlite3)
 	target_link_libraries(cstuff PUBLIC PkgConfig::SQLITE)
-  endif(want_db)
+  endif(want_basedb)
   if(want_itoa)
 	sourcederp(itoa.c)
   endif(want_itoa)
@@ -75,6 +78,7 @@ function(add_cstuff)
 endfunction(add_cstuff)
 
 if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
+  add_cstuff(record basedb)
   add_executable(test_record
 	test/test_record.c
 	record.c)
