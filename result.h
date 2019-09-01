@@ -4,6 +4,8 @@
 typedef enum result {
 	fail,
 	succeed,
+	done,
+	undefined
 } result;
 
 #endif /* RESULT_H */
