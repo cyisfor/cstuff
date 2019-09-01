@@ -32,13 +32,13 @@
 */
 
 typedef struct T {
-	char* s;
+	byte* s;
 	size_t l;
 	unsigned int refs; 		/* do we ever need more than 4 billion refs? */
 } *T;
 
 static
-T N(from_C)(const char* base, size_t len) {
+T N(from_C)(const byte* base, size_t len) {
 	T ret = malloc(str.l);
 	memcpy(ret->base, str.base, str.l);
 	ret->refs = 1;
@@ -51,7 +51,7 @@ T N(from)(const string str) {
 }
 
 static
-struct T N(from_static_f)(const char* base, size_t len) {
+struct T N(from_static_f)(byte* base, size_t len) {
 	struct T str = {
 		.base = base,
 		.len = len
@@ -59,8 +59,34 @@ struct T N(from_static_f)(const char* base, size_t len) {
 	};
 	return str;
 }
+
+T N(unallocated)(size_t len) {
+	T str = malloc(sizeof(struct T));
+	str.base = malloc(len);
+	str.len = len;
+	str.refs = 1;
+	return str;
+}
+
 /* ugh, cpp... */
+#if namespace == rstring
 #define rstring_static(lit) rstring_from_static_f(LITLEN(lit))
+#define rstring_get_obj(str, type) ({ assert(str->len == sizeof(type)); (type*)str->base; })
+
+#define rstring_from_obj_2(tempvar, obj) ({ \
+	rstring tempvar = rstring_unallocated(sizeof(obj));	\
+	memcpy(&tempvar.base, &obj, sizeof(obj)); \
+	tempvar;								  \
+	})
+#define rstring_from_obj(obj) rstring_from_obj_2(tempvar ## __COUNTER, obj)
+#else
+#error we can't do this without macros, sorry.
+static struct T N(static)(byte* lit) {
+	return N(from_static_f)(lit, strlen(lit));
+}
+#endif
+
+
 
 /* will always return a string ending in \0
    str MAY be mutated (if no other refs to it)
@@ -76,7 +102,7 @@ T N(nullendify)(T str) {
 		return str;
 	}
 	// we need to make a copy of it regardless, to make room for the \0
-	char* copy;
+	byte* copy;
 	if(str->refs == REF_IS_ONLY_REF) {
 		str->base = realloc(str->base, ++str->len);
 	} else {
