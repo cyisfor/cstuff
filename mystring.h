@@ -138,8 +138,6 @@ const byte* ZSTR(const string st) {
 
 #define NULL_STRING ((string){NULL,0})
 
-#define CONCATSYM(a,b) a ## b
-
 #include "defer.h"
 
 #define AUTO_BSTRING(name,value) bstring name = value; DEFER { strclear(&name); }
