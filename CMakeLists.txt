@@ -1,22 +1,28 @@
 cmake_minimum_required(VERSION 3.14)
 project(cstuff VERSION 0.1)
-set(cstuff_source_dir "${CMAKE_CURRENT_SOURCE_DIR}" PARENT_SCOPE)
+
+if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
+  set(cstuff_source_dir "${CMAKE_CURRENT_SOURCE_DIR}")
+else()
+  set(cstuff_source_dir "${CMAKE_CURRENT_SOURCE_DIR}" PARENT_SCOPE)
+endif()
 
 function(add_cstuff)
   set(options basedb itoa mmapfile pat aton become record)
   cmake_parse_arguments(PARSE_ARGV 0 want "${options}" "" "")
 
   file(WRITE "${CMAKE_BINARY_DIR}/cmakesucks.c" "")
-  add_library(cstuff "${CMAKE_BINARY_DIR}/cmakesucks.c")
-  
-  target_include_directories(cstuff PUBLIC "${cstuff_source_dir}")
+  if(TARGET cstuff)
+  else()
+	add_library(cstuff "${CMAKE_BINARY_DIR}/cmakesucks.c")
+    target_include_directories(cstuff PUBLIC "${cstuff_source_dir}")
+  endif()
 
   function(sourcederp)
 	set(sources)
 	foreach(arg IN LISTS ARGV)
 	  get_filename_component(aarg "${arg}" ABSOLUTE BASE_DIR
 		"${cstuff_source_dir}")
-	  message(STATUS "uhh ${arg} => ${aarg}")
 	  list(APPEND sources ${aarg})
 	endforeach()
 	target_sources(cstuff PUBLIC ${sources})
@@ -80,7 +86,6 @@ endfunction(add_cstuff)
 
 if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
   enable_testing()
-  add_cstuff(record basedb)
   function (my_test name)
 	add_cstuff(${name})
 	add_executable(test_${name}
@@ -90,4 +95,5 @@ if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
   endfunction(my_test)
   my_test(record)
   my_test(basedb)
+  my_test(aton)
 endif()
