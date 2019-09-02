@@ -4,7 +4,6 @@
 typedef enum result {
 	fail,
 	succeed,
-	done,
 	undefined
 } result;
 
