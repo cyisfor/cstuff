@@ -2,9 +2,10 @@
 
 int main(int argc, char *argv[])
 {
+	record_init();
 	basedb db = basedb_open(.path = ":memory:");
 	int res = basedb_exec(db, "CREATE TABLE foo (bar INTEGER)");
-	ensure_eq(res, succeed);
+	ensure_eq(res, done);
 
 	printf("has table? %s\n", basedb_table(db, "foo") ? "ye" : "ne");
 	
