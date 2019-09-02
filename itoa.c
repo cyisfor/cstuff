@@ -20,6 +20,7 @@ char baseQdigit(int val) {
 		ONE(0xd,'Y');
 		ONE(0xe,'X');
 		ONE(0xf,'W');
+#undef ONE
 	default:
 		abort();
 	};
@@ -27,8 +28,27 @@ char baseQdigit(int val) {
 
 static
 char normaldigit(int val) {
-	if(val <= 9) return val + '0';
-	return val - 10 + 'A';
+	switch(val) {
+#define ONE(val, numeral) case val: return numeral
+		ONE(0,'0');
+		ONE(1,'1');
+		ONE(2,'2');
+		ONE(3,'3');
+		ONE(4,'4');
+		ONE(5,'5');
+		ONE(6,'6');
+		ONE(7,'7');
+		ONE(8,'8');
+		ONE(9,'9');
+		ONE(0xA,'A');
+		ONE(0xB,'B');
+		ONE(0xC,'C');
+		ONE(0xD,'D');
+		ONE(0xE,'E');
+		ONE(0xF,'F');
+	default:
+		return val - 10 + 'A';
+	};
 }
 
 /* itoa: convert n to characters in s */
