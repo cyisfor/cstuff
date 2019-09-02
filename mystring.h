@@ -6,8 +6,8 @@
 #include <stdlib.h> // malloc
 #include <stdbool.h>
 
-#define LITSIZ(a) (sizeof(a)-1)
-#define LITLEN(a) a, LITSIZ(a)
+#define LITSIZ(...) (sizeof(__VA_ARGS__)-1)
+#define LITLEN(...) (__VA_ARGS__), LITSIZ(__VA_ARGS__)
 
 /* C makes this literally unusable. You cannot create a mutable structure that points
 	 to const data. 
@@ -54,7 +54,7 @@ typedef struct bstring {
 #define CSTRING(str) (*((const string*)&str)) // any kind of string
 #define DEREFSTRING(str) (*((string*)&str)) // any kind of string, but may segfault
 #define STRING(str) ((string){str.base, str.len}) // any kind of string
-#define LITSTR(lit) (const string){.base = lit, .len = LITSIZ(lit)}
+#define LITSTR(...) (const string){.base = (__VA_ARGS__), .len = LITSIZ(__VA_ARGS__)}
 static
 bstring bstringstr(const byte* str, size_t len) {
 	byte* buf = malloc(len);
