@@ -79,11 +79,14 @@ function(add_cstuff)
 endfunction(add_cstuff)
 
 if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
+  enable_testing()
   add_cstuff(record basedb)
   add_executable(test_record
 	test/test_record.c)
   target_link_libraries(test_record PRIVATE cstuff)
+  add_test(record test_record)
   add_executable(test_basedb
 	test/test_basedb.c)
   target_link_libraries(test_basedb PRIVATE cstuff)
+  add_test(basedb test_basedb)
 endif()
