@@ -1,7 +1,6 @@
 #include "itoa.h"
 #include <assert.h>
 
-
 static
 char baseQdigit(int val) {
 	switch(val) {

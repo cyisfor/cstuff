@@ -1,4 +1,5 @@
 #include "itoa.h"
+#include "mystring.h"
 #include <string.h> // memcmp
 
 
