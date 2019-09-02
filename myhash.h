@@ -2,8 +2,8 @@
 #define MYHASH_H
 
 #include "mystring.h"
-#include <string.h> //
-#include <glib.h> // 
+#include <string.h>
+#include <glib.h>
 
 
 /* fucking hell, glib */

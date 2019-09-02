@@ -143,12 +143,11 @@ const byte* ZSTR(const string st) {
 #define AUTO_BSTRING(name,value) bstring name = value; DEFER { strclear(&name); }
 
 static
-ncstring string_copy(const string str) {
-	ncstring ret = {
-		.base = malloc(str.len),
-		.len = str.len
-	};
-	memcpy(ret.base, str.base, str.len);
+ncstring* string_copy(const string str) {
+	ncstring* ret = malloc(sizeof(ncstring) + str.len);
+	ret->base = (byte*)&ret[1];
+	ret->len = str.len;
+	memcpy(ret->base, str.base, str.len);
 	return ret;
 }
 
