@@ -1,4 +1,6 @@
 #include "itoa.h"
+#include <assert.h>
+
 
 static
 char baseQdigit(int val) {
@@ -73,7 +75,7 @@ size_t int_to_base(char s[], size_t space, unsigned int n, int base) {
 		   n /= 0x10;
 		   break;
 	   case BASE_Q:
-		   s[digits] = frombaseQ(n % 0x10);
+		   s[digits] = baseQdigit(n % 0x10);
 		   ++digits;
 		   n /= 0x10;
 		   break;

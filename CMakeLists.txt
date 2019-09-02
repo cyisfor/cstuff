@@ -86,14 +86,17 @@ endfunction(add_cstuff)
 
 if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
   enable_testing()
-  function (my_test name)
-	add_cstuff(${name})
-	add_executable(test_${name}
-	  test/test_${name}.c)
-	target_link_libraries(test_${name} PRIVATE cstuff)
-	add_test(${name} test_${name})
+  function (my_tests)
+	foreach(name IN LISTS ARGV)
+	  add_cstuff(${name})
+	  add_executable(test_${name}
+		test/test_${name}.c)
+	  target_link_libraries(test_${name} PRIVATE cstuff)
+	  add_test(${name} test_${name})
+	endforeach(name)
   endfunction(my_test)
-  my_test(record)
-  my_test(basedb)
-  my_test(aton)
+  my_tests(record
+	basedb
+	aton
+	itoa)
 endif()
