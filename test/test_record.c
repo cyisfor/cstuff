@@ -1,6 +1,7 @@
 #include "record.h"
 #include <unistd.h> // fork
 #include <sys/wait.h> // waitpid
+#include <stdio.h> // 
 
 
 int main(int argc, char *argv[])
@@ -15,6 +16,12 @@ int main(int argc, char *argv[])
 	}
 	int status;
 	if(waitpid(pid, &status,0) != pid) return 1;
-	if(!WIFEXITED(status)) return -WTERMSIG(status);
-	return WEXITSTATUS(status);
+	if(!WIFEXITED(status)) {
+		int sig = WTERMSIG(status);
+		if(sig == SIGABRT) {
+			return 0;
+		}
+		return -sig;
+	}
+	return 1 + WEXITSTATUS(status);
 }
