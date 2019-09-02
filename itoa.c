@@ -1,7 +1,7 @@
 #include "itoa.h"
 
 static
-char frombaseQ(int val) {
+char baseQdigit(int val) {
 	switch(val) {
 #define ONE(val,numeral) case val: return numeral
 		ONE(0,'Q');
@@ -25,6 +25,12 @@ char frombaseQ(int val) {
 	};
 }
 
+static
+char normaldigit(int val) {
+	if(val <= 9) return val + '0';
+	return val - 10 + 'A';
+}
+
 /* itoa: convert n to characters in s */
 size_t int_to_base(char s[], size_t space, unsigned int n, int base) {
 	assert(base != ('Z' - 'A') + 9);
@@ -41,18 +47,18 @@ size_t int_to_base(char s[], size_t space, unsigned int n, int base) {
 		   ++digits;
 		   n /= 10;
 		   break;
+	   case 0xa+1:
+		   s[digits] = normaldigit(n % 0x10);
+		   ++digits;
+		   n /= 0x10;
+		   break;
 	   case BASE_Q:
 		   s[digits] = frombaseQ(n % 0x10);
 		   ++digits;
 		   n /= 0x10;
 		   break;
 	   default:
-		   int digit = n % base;
-		   if(digit <= 9) {
-			   s[digits] = digit + '0';
-		   } else {
-			   s[digits] = digit + 'A' - 9;
-		   }
+		   s[digits] = normaldigit(n % base);
 		   ++digits;
 		   n /= base;
 	   };
