@@ -147,15 +147,28 @@ struct pat_captures pat_capture(struct pat* parent, string test, int start) {
 								PCRE_INFO_CAPTURECOUNT,
 								&captures);
 		g_assert(res == 0);
-		/* 2 captures = capture 0, 1, 2 = 0,0 1,1 2,2 = 2*3
-		   but needs 1/3 for workspace so n * 2/3 = 2*3, so n = 2*3 * 3/2 = 9
-		   captures * 3 * 3 / 2 then +1 if * 3*3 is odd
+		/* 2 captures = 3, since captures whole pattern
+		   3 captures = 0,0,1,1,2,2 (6 slots)
+		   but needs 1/3 for workspace
+		   (a+n)*2/3 >= a
+		   a + n = a * 3 / 2
+		   n = a * 3 / 2 - a
+		   n = a * 1/2
+		   a + n = a * 3/2
+		   sizetotal = a+n = a * 3/2
+		   a = 2 * (captures+1)
+		   b = a * 3/2
+
+		   So for 2 captures, a = 6, b = 9
+		   for 1 capture, a = 4, b = 6
+		   for 3 captures, a = 8, b = 12
 		*/
-		int derp = captures * 3 * 3;
-		if(derp % 2 == 1) {
-			self->ovecsize = derp / 2 + 1;
+		int a = 2 * (captures+1);
+		int b = a * 3;
+		if(b % 2 == 1) {
+			self->ovecsize = b / 2 + 1;
 		} else {
-			self->ovecsize = derp / 2;
+			self->ovecsize = b / 2;
 		}
 	}
 	struct pat_captures cap = {

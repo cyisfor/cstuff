@@ -9,6 +9,7 @@
 
 static bool show_source = false;
 static bool show_timestamp = true;
+static bool precise_timestamp = false;
 static bool plain_log = false;
 static bool abort_on_error = true;
 //static bool colorize = ?
@@ -19,6 +20,10 @@ void record_init(void) {
 	}
 	if(getenv("no_timestamp")) {
 		show_timestamp = false;
+	} else {
+		if(getenv("precise_timestamp")) {
+			precise_timestamp=true;
+		}
 	}
 	if(getenv("plain_log")) {
 		plain_log = true;
@@ -33,7 +38,17 @@ void record_f(struct record_params p, const char* fmt, ...) {
 	va_start(args, fmt);
 	if(plain_log) {
 		if(show_timestamp) {
-			fprintf(stderr, "%ld ", time(NULL));
+			if(precise_timestamp) {
+				struct timespec when;
+				ensure0(clock_gettime(CLOCK_REALTIME, &when));
+				char buf[0x10];
+				size_t amt = itoa(buf, 0x10, when.tv_sec);
+				fwrite(buf, amt, 1, stderr);
+				fputc('.', stderr);
+				
+			} else {
+				fprintf(stderr, "%ld ", time(NULL));
+			}
 		}		
 		if(show_source) {
 			fputs(p.file, stderr);
