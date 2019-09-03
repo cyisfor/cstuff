@@ -31,11 +31,9 @@ int main(int argc, char *argv[])
 	if(amt != 4) return 9;
 	if(0 != memcmp(buf, LITLEN("T.BJ"))) return 10;
 
-	amt = double_to_base(buf, 0x10, 3.1, 0x10);
-	printf("uh (%.*s)\n",amt, buf);
-	return 23;
-	
+	amt = double_to_base(buf, 0x10, 13.9374, 0x10);
+	if(amt != 14) return 11;
+	if(0 != memcmp(buf, LITLEN("D.EFF972474539"))) return 12;
 
-	
     return 0;
 }
