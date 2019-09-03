@@ -53,11 +53,11 @@ char normaldigit(int val) {
 }
 
 /* itoa: convert n to characters in s */
-size_t int_to_base(char s[], size_t space, unsigned int n, int base) {
+size_t int_to_base(char s[], size_t space, unsigned long n, int base) {
 	assert(base != ('Z' - 'A') + 9);
 	
    size_t digits;
-   /* we can't generate them in reverse, since we don't know how many digits yet */
+   /* we must generate in reverse, since we don't know how many digits yet */
    digits = 0;
    while(digits<space) {  /* generate digits in reverse order */
 	   /* get next digit */
@@ -96,6 +96,56 @@ size_t int_to_base(char s[], size_t space, unsigned int n, int base) {
    return digits;
 }
 
-size_t itoa(char s[], size_t space, unsigned int n) {
+size_t itoa(char s[], size_t space, unsigned long n) {
 	return int_to_base(s, space, n, 9+1);
+}
+
+size_t double_to_base(char s[], size_t space, double n, int base) {
+	assert(base != ('Z' - 'A') + 9);
+
+	unsigned long intpart = n;
+	double fracpart = n - intpart;
+	size_t digits = int_to_base(s, space, intpart, base);
+	if(digits + 1 >= space) return digits;
+//	if(!fracpart) return digits; always want the .0
+	s[digits] = '.';
+	++digits;
+	assert(digits < space);
+	n = fracpart * base;
+	while(digits<space) {  /* generate digits in non-reverse order */
+	   /* get next digit */
+	   char c;
+	   switch(base) {
+	   case 9+1:
+		   c = n; // integer rounding
+		   s[digits] = c + '0';
+		   ++digits;
+		   n = (n - c) * 10;
+		   break;
+	   case 0xa+1:
+		   c = n;
+		   s[digits] = normaldigit(c);
+		   ++digits;
+		   n = (n - c) * 0x10;
+		   break;
+	   case BASE_Q:
+		   c = n;
+		   s[digits] = baseQdigit(c);
+		   ++digits;
+		   n = (n - c) * 0x10;
+		   break;
+	   default:
+		   c = n;
+		   s[digits] = normaldigit(c);
+		   ++digits;
+		   n = (n - c) * base;
+	   };
+	   if(n == 0.0) break;
+   }
+
+   return digits;
+}
+
+size_t dtoa(char s[], size_t space, double n) {
+	return double_to_base(s, space, n, 10);
 }

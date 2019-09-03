@@ -17,6 +17,9 @@ int main(int argc, char *argv[])
 	amt = int_to_base(buf,0x10,0x7EA7B00B, 0x10);
 	if(amt != 8) return 5;
 	if(0 != memcmp(buf, LITLEN("7EA7B00B"))) return 6;
-	
+
+	amt = double_to_base(buf, 0x10, 1.234, 10);
+	printf("uh (%.*s)\n",amt, buf);
+	return 23;
     return 0;
 }
