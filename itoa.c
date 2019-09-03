@@ -114,7 +114,7 @@ size_t double_to_base(char s[], size_t space, double n, int base) {
 	n = fracpart * base;
 	while(digits<space) {  /* generate digits in non-reverse order */
 	   /* get next digit */
-	   char c;
+	   unsigned char c;
 	   switch(base) {
 	   case 9+1:
 		   c = n; // integer rounding

@@ -18,7 +18,14 @@ int main(int argc, char *argv[])
 	if(amt != 8) return 5;
 	if(0 != memcmp(buf, LITLEN("7EA7B00B"))) return 6;
 
-	amt = double_to_base(buf, 0x10, 1.234, 10);
+	amt = double_to_base(buf, 5, 1.235, 10);
+	if(amt != 5) return 7;
+	if(0 != memcmp(buf, LITLEN("1.235"))) return 8;
+
+	amt = double_to_base(buf, 0x10, 8.0 + 1/16.0 + 1/32.0 + 1/256.0, 0x10);
+	if(amt != 4) return 9;
+	if(0 != memcmp(buf, LITLEN("8.19"))) return 10;
+	amt = double_to_base(buf, 0x10, 8.0 + 1/16.0 + 1/32.0 + 1/256.0, BASE_Q);
 	printf("uh (%.*s)\n",amt, buf);
 	return 23;
     return 0;
