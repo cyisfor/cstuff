@@ -152,4 +152,9 @@ ncstring* string_copy(const string str) {
 	return ret;
 }
 
+static
+void ncstring_free(ncstring* str) {
+	free(str->base);
+}
+
 #endif /* _MYSTRING_H_ */

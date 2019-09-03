@@ -163,11 +163,12 @@ struct pat_captures pat_capture(struct pat* parent, string test, int start) {
 		   for 1 capture, a = 4, b = 6
 		   for 3 captures, a = 8, b = 12
 		*/
-		int derp = captures * 3;
-		if(derp % 2 == 1) {
-			self->ovecsize = derp / 2 + 1;
+		int a = 2 * (captures+1);
+		int b = a * 3;
+		if(b % 2 == 1) {
+			self->ovecsize = b / 2 + 1;
 		} else {
-			self->ovecsize = derp / 2;
+			self->ovecsize = b / 2;
 		}
 	}
 	struct pat_captures cap = {
