@@ -104,14 +104,14 @@ size_t double_to_base(char s[], size_t space, double n, int base) {
 	assert(base != ('Z' - 'A') + 9);
 
 	unsigned long intpart = n;
-	double fracpart = n - intpart;
+	n -= intpart;
 	size_t digits = int_to_base(s, space, intpart, base);
 	if(digits + 1 >= space) return digits;
 //	if(!fracpart) return digits; always want the .0
 	s[digits] = '.';
 	++digits;
 	assert(digits < space);
-	while(digits<space) {  /* generate digits in non-reverse order */
+	while(n > 0.0 && digits<space) {  /* generate digits in non-reverse order */
 	   /* get next digit */
 	   unsigned char c;
 	   switch(base) {
@@ -143,7 +143,6 @@ size_t double_to_base(char s[], size_t space, double n, int base) {
 		   s[digits] = normaldigit(c);
 		   ++digits;
 	   };
-	   if(n == 0.0) break;
    }
 
    return digits;

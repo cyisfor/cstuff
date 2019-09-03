@@ -7,10 +7,6 @@ int main(int argc, char *argv[])
 {
     char buf[0x10];
 	size_t amt = itoa(buf, 0x10, 123456);
-	amt = double_to_base(buf, 0x10, 8.0 + 1/16.0 + 1/32.0 + 1/256.0, BASE_Q);
-	printf("uh (%.*s)\n",amt, buf);
-	return 23;
-	
 	
 	if(amt != 6) return 1;
 	if(0 != memcmp(buf, LITLEN("123456"))) return 2;
@@ -30,5 +26,16 @@ int main(int argc, char *argv[])
 	amt = double_to_base(buf, 0x10, 8.0 + 1/16.0 + 1/32.0 + 1/256.0, 0x10);
 	if(amt != 4) return 9;
 	if(0 != memcmp(buf, LITLEN("8.19"))) return 10;
+
+	amt = double_to_base(buf, 0x10, 8.0 + 1/16.0 + 1/32.0 + 1/256.0, BASE_Q);
+	if(amt != 4) return 9;
+	if(0 != memcmp(buf, LITLEN("T.BJ"))) return 10;
+
+	amt = double_to_base(buf, 0x10, 3.1, 0x10);
+	printf("uh (%.*s)\n",amt, buf);
+	return 23;
+	
+
+	
     return 0;
 }
