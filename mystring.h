@@ -144,8 +144,9 @@ const byte* ZSTR(const string st) {
 
 static
 ncstring* string_copy(const string str) {
-	ncstring* ret = malloc(sizeof(ncstring) + str.len);
-	ret->base = (byte*)&ret[1];
+	byte* base = malloc(str.len + sizeof(ncstring));
+	ncstring* ret = (ncstring*)(base + str.len);
+	ret->base = base;
 	ret->len = str.len;
 	memcpy(ret->base, str.base, str.len);
 	return ret;
