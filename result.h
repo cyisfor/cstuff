@@ -2,9 +2,12 @@
 #define RESULT_H
 
 typedef enum result {
-	fail,
-	succeed,
-	undefined
+	failure,
+	success,
+	undefined,
+	result_pending,
+	result_unknown,
+	result_ambiguous,
 } result;
 
 #endif /* RESULT_H */
