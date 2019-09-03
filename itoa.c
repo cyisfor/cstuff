@@ -111,34 +111,37 @@ size_t double_to_base(char s[], size_t space, double n, int base) {
 	s[digits] = '.';
 	++digits;
 	assert(digits < space);
-	n = fracpart * base;
 	while(digits<space) {  /* generate digits in non-reverse order */
 	   /* get next digit */
 	   unsigned char c;
 	   switch(base) {
 	   case 9+1:
+		   n *= 10;
 		   c = n; // integer rounding
+		   n -= c;
 		   s[digits] = c + '0';
 		   ++digits;
-		   n = (n - c) * 10;
 		   break;
 	   case 0xa+1:
+		   n *= 0x10;
 		   c = n;
+		   n -= c;
 		   s[digits] = normaldigit(c);
 		   ++digits;
-		   n = (n - c) * 0x10;
 		   break;
 	   case BASE_Q:
+		   n *= 0x10;
 		   c = n;
+		   n -= c;
 		   s[digits] = baseQdigit(c);
 		   ++digits;
-		   n = (n - c) * 0x10;
 		   break;
 	   default:
+		   n *= base;
 		   c = n;
+		   n -= c;
 		   s[digits] = normaldigit(c);
 		   ++digits;
-		   n = (n - c) * base;
 	   };
 	   if(n == 0.0) break;
    }
