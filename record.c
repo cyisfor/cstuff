@@ -1,4 +1,5 @@
 #include "record.h"
+#include "itoa.h"
 #include "mystring.h"
 #include <stdio.h>
 #include <stdarg.h> // VA_*
@@ -40,7 +41,7 @@ void record_f(struct record_params p, const char* fmt, ...) {
 		if(show_timestamp) {
 			if(precise_timestamp) {
 				struct timespec when;
-				ensure0(clock_gettime(CLOCK_REALTIME, &when));
+				if(0 != clock_gettime(CLOCK_REALTIME, &when)) abort();
 				char buf[0x10];
 				size_t amt = itoa(buf, 0x10, when.tv_sec);
 				fwrite(buf, amt, 1, stderr);
