@@ -57,7 +57,7 @@ struct pat* pat_setup(const string pattern, enum pat_mode mode) {
         }
         return (struct pat*)self;
     } else {
-        struct pcre_pat* self = g_new(struct pcre_pat,1);
+        struct pcre_pat* self = g_slice_new0(struct pcre_pat);
         assert(self);
 		const char* zzz;
 		if(pattern.base[pattern.len-1] != '\0') {
@@ -103,7 +103,7 @@ void pat_cleanup(struct pat** self) {
             pcre_free_study(pdoom->study);
     }
 
-    g_free(doomed);
+    g_slice_free(struct pat*, doomed);
 }
 
 bool pat_check(struct pat* parent, string test) {
