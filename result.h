@@ -4,6 +4,7 @@
 typedef enum result {
 	failure,
 	success,
+	done,
 	undefined,
 	result_pending,
 	result_unknown,
