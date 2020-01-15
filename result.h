@@ -17,4 +17,7 @@ typedef enum T {
 	N(busy),
 } result;
 
+#undef T
+#undef N
+
 #endif /* RESULT_H */
