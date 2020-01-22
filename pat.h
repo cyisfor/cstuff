@@ -8,7 +8,13 @@ enum pat_mode {
 
 struct pat;
 
-struct pat* pat_setup(string pattern, enum pat_mode mode, ...);
+struct pat_plain_info {
+	bool caseless;
+	bool match_first;
+};
+
+struct pat* pat_pcre_compile(string pattern);
+struct pat* pat_plain_compile(string pattern, struct pat_plain_info info);
 void pat_cleanup(struct pat**);
 
 bool pat_check(struct pat*, string test);

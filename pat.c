@@ -37,23 +37,24 @@ void pats_uninit(void) {
     }
 }
 
-struct pat* pat_setup(const string pattern, enum pat_mode mode) {
+struct pat* pat_setup(const string pattern, enum pat_mode mode, ...) {
     const char* err = NULL;
     int erroffset = 0;
-
-    if(mode == pat_plain || mode == pat_match) {
+	va_list args;
+	va_start(args, mode);
+    if(mode == pat_plain) {
         struct plain_pat* self = g_new(struct plain_pat,1);
         self->parent.mode = mode;
-        self->caseless = (mode == pat_match) ? TRUE : FALSE;
-        if(mode == pat_match) {
-            self->caseless = TRUE;
+		struct pat_plain_info info = va_arg(args, struct pat_plain_info);
+        self->caseless = info.caseless;
+		self->match_first = info.match_first;
+        if(self->caseless) {
             // needs freeing
             self->substring = (string){
 				.base = g_ascii_strdown(pattern.base, pattern.len),
 				.len = pattern.len
 			};
         } else {
-            self->caseless = FALSE;
             self->substring = pattern; // assuming this is a string literal
         }
         return (struct pat*)self;
