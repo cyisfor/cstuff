@@ -70,7 +70,7 @@ struct pat* pat_pcre_compile(const string pattern) {
 	self->parent.mode = mode;
 	self->pat = pcre_compile(zzz, 0,
 							 &err,&erroffset,NULL);
-	
+	ZSTR_done();
 	if(!self->pat) {
 		fprintf(stderr,"PCRE COMPILE ERROR %s\n",err);
 		abort();
@@ -104,18 +104,19 @@ void pat_cleanup(struct pat** self) {
     g_slice_free(struct pat*, doomed);
 }
 
-bool pat_check(struct pat* parent, string test) {
+bool pat_check(struct pat* parent, const string test) {
     if(parent->mode == pat_plain || parent->mode == pat_match) {
         struct plain_pat* self = (struct plain_pat*) parent;
 		if(test.len != self->substring.len) return false;
+		string test2 = test;
         if(self->caseless==TRUE) 
-            test.base = g_ascii_strdown(test.base,test.len);
+            test2.base = g_ascii_strdown(test.base,test.len);
         const char* found = memmem(
-			test.base, test.len,
+			test2.base, test2.len,
 			self->substring.base,
 			self->substring.len);
         if(self->caseless==TRUE)
-            g_free((char*)test.base);
+            g_free((char*)test2.base);
 		return found != NULL;
     }
     struct pcre_pat* self = (struct pcre_pat*) parent;
@@ -136,7 +137,7 @@ bool pat_check(struct pat* parent, string test) {
 }
 
 static
-struct pat_captures pcre_pat_capture(struct pat* parent, string test, int start) {
+struct pat_captures pcre_pat_capture(struct pat* parent, const string test, int start) {
     g_assert(parent->mode == pat_pcre);
     struct pcre_pat* self = (struct pcre_pat*) parent;
 	if(self->ovecsize == 0) {
@@ -198,17 +199,16 @@ struct pat_captures plain_pat_capture(struct pat* parent, string test, int start
 			cur, test.len - (cur - test),
 			self->substring.base, self->substring.len);
 		if(next == NULL) break;
-		cur = next;
 		++captures;
+		if(self->match_first) {
+			/* if you want to know the bounds only of the first match */
+			break;
+		}
+		cur = next;
 	}
 	cur = test.base + start;
 	cap.ovecsize = captures << 1;
 	cap.ovector = g_slice_alloc(pat.ovecsize * sizeof(*cap.ovector));
-#if 0	
-	/* is this really useful at all? just for pcre continuity?*/
-	cap.ovector[0] = test.base + start;
-	cap.ovector[1] = test.base + test.len - 1;
-#endif
 	captures = 0;
 	for(;;) {
 		const char* next = memmem(
@@ -217,8 +217,11 @@ struct pat_captures plain_pat_capture(struct pat* parent, string test, int start
 		if(next == NULL) break;
 		cap.ovector[captures << 1] = next;
 		cap.ovector[(captures << 1)+1] = next + self->substring.len;
-		cur = next;
 		++captures;
+		if(self->match_first) {
+			break;
+		}
+		cur = next;
 	}
 
 	return cap;
@@ -230,10 +233,8 @@ struct pat_captures pat_capture(struct pat* parent, string test, int start) {
 		return plain_pat_capture(parent, test, start);
 	case pat_pcre:
 		return pcre_pat_capture(parent, test, start);
-		
-
-	
-	
+	};
+}
 
 void pat_capture_done(struct pat_captures* cap) {
 	g_slice_free1(cap->ovecsize * sizeof(int), cap->ovector);
