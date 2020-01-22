@@ -189,7 +189,8 @@ struct pat_captures pcre_pat_capture(struct pat* parent, const string test, int 
 	return cap;
 }
 
-struct pat_captures plain_pat_capture(struct pat* parent, string test, int start) {
+static
+struct pat_captures plain_pat_capture(struct pat* parent, const string test, int start) {
 	struct plain_pat* self = (struct plain_pat*)parent;
 	const char* cur = test.base + start;
 	struct pat_captures cap = {};
@@ -207,16 +208,15 @@ struct pat_captures plain_pat_capture(struct pat* parent, string test, int start
 		cur = next;
 	}
 	cur = test.base + start;
-	cap.ovecsize = captures << 1;
-	cap.ovector = g_slice_alloc(pat.ovecsize * sizeof(*cap.ovector));
+	cap.ovecsize = captures;
+	cap.ovector = g_slice_alloc(cap.ovecsize * sizeof(*cap.ovector));
 	captures = 0;
 	for(;;) {
 		const char* next = memmem(
 			cur, test.len - (cur - test),
 			self->substring.base, self->substring.len);
 		if(next == NULL) break;
-		cap.ovector[captures << 1] = next;
-		cap.ovector[(captures << 1)+1] = next + self->substring.len;
+		cap.ovector[captures] = next - test.base;
 		++captures;
 		if(self->match_first) {
 			break;
@@ -227,7 +227,7 @@ struct pat_captures plain_pat_capture(struct pat* parent, string test, int start
 	return cap;
 }
 
-struct pat_captures pat_capture(struct pat* parent, string test, int start) {
+struct pat_captures pat_capture(struct pat* parent, const string test, int start) {
 	switch(parent->mode) {
 	case pat_plain:
 		return plain_pat_capture(parent, test, start);
@@ -237,7 +237,9 @@ struct pat_captures pat_capture(struct pat* parent, string test, int start) {
 }
 
 void pat_capture_done(struct pat_captures* cap) {
-	g_slice_free1(cap->ovecsize * sizeof(int), cap->ovector);
+	if(cap->ovecsize) {
+		g_slice_free1(cap->ovecsize * sizeof(int), cap->ovector);
+	}
 	cap->ovector = NULL;
-	
+	cap->ovecsize = 0;
 }
