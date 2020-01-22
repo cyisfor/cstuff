@@ -16,9 +16,20 @@ target_include_directories(cstuff PUBLIC "${cstuff_source_dir}")
 
 set_property(TARGET cstuff PROPERTY cstuff_source_dir "${CMAKE_CURRENT_SOURCE_DIR}")
 
+# this is just useful everywhere
+function (add_submodule submod)
+  set(listfile "${CMAKE_CURRENT_SOURCE_DIR}/${submod}/CMakeLists.txt")
+  file(TIMESTAMP "${listfile}" timestamp)
+  if(NOT timestamp)
+	execute_process(COMMAND
+	  git submodule update --init --recursive "${CMAKE_CURRENT_SOURCE_DIR}/${submod}")
+  endif(NOT timestamp)
+  add_subdirectory("${submod}")
+endfunction(add_submodule)
+
 function(add_cstuff)
   get_property(cstuff_source_dir TARGET cstuff PROPERTY cstuff_source_dir)
-  set(options basedb itoa mmapfile pat aton become record ensure)
+  set(options itoa mmapfile pat aton become record ensure)
   cmake_parse_arguments(PARSE_ARGV 0 want "${options}" "" "")
 
   function(sourcederp)
@@ -55,17 +66,7 @@ function(add_cstuff)
   if(want_record OR want_ensure)
 	sourcederp(record.c itoa.c)
   endif()
-  
-  if(want_basedb)
-	set(want_mmapfile 1)
-	set(want_itoa 1)
-	sourcederp(db/base.c mmapfile.c record.c)
-	include(FindPkgConfig)
-	pkg_check_modules(SQLITE
-	  REQUIRED IMPORTED_TARGET
-	  sqlite3)
-	target_link_libraries(cstuff PUBLIC PkgConfig::SQLITE)
-  endif(want_basedb)
+
   if(want_itoa)
 	sourcederp(itoa.c)
   endif(want_itoa)
@@ -117,7 +118,6 @@ if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
 	endforeach(name)
   endfunction(my_test)
   my_tests(record
-	basedb
 	aton
 	itoa)
 endif()
