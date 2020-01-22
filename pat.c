@@ -192,12 +192,12 @@ struct pat_captures pcre_pat_capture(struct pat* parent, const string test, int 
 static
 struct pat_captures plain_pat_capture(struct pat* parent, const string test, int start) {
 	struct plain_pat* self = (struct plain_pat*)parent;
-	const char* cur = test.base + start;
+	const byte* cur = test.base + start;
 	struct pat_captures cap = {};
 	size_t captures = 0;
 	for(;;) {
-		const char* next = memmem(
-			cur, test.len - (cur - test),
+		const byte* next = memmem(
+			cur, test.len - (cur - test.base),
 			self->substring.base, self->substring.len);
 		if(next == NULL) break;
 		++captures;
@@ -205,15 +205,15 @@ struct pat_captures plain_pat_capture(struct pat* parent, const string test, int
 			/* if you want to know the bounds only of the first match */
 			break;
 		}
-		cur = next;
+		cur = next + test.len;
 	}
 	cur = test.base + start;
 	cap.ovecsize = captures;
 	cap.ovector = g_slice_alloc(cap.ovecsize * sizeof(*cap.ovector));
 	captures = 0;
 	for(;;) {
-		const char* next = memmem(
-			cur, test.len - (cur - test),
+		const byte* next = memmem(
+			cur, test.len - (cur - test.base),
 			self->substring.base, self->substring.len);
 		if(next == NULL) break;
 		cap.ovector[captures] = next - test.base;
@@ -221,7 +221,7 @@ struct pat_captures plain_pat_capture(struct pat* parent, const string test, int
 		if(self->match_first) {
 			break;
 		}
-		cur = next;
+		cur = next + test.len;
 	}
 
 	return cap;

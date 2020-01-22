@@ -132,6 +132,7 @@ const byte* ZSTR(const string st) {
 	return zstr_buf;
 }
 
+static
 void ZSTR_done(void) {
 	if(zstr_buf) {
 		free(zstr_buf);
