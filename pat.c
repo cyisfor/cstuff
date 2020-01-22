@@ -200,12 +200,16 @@ struct pat_captures plain_pat_capture(struct pat* parent, const string test, int
 			cur, test.len - (cur - test.base),
 			self->substring.base, self->substring.len);
 		if(next == NULL) break;
+		cap.matched = true;
 		++captures;
 		if(self->match_first) {
 			/* if you want to know the bounds only of the first match */
 			break;
 		}
 		cur = next + self->substring.len;
+	}
+	if(!cap.matched) {
+		return cap;
 	}
 	cur = test.base + start;
 	cap.ovecsize = captures;
