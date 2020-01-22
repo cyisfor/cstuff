@@ -121,14 +121,22 @@ void strclear(bstring* st) {
 	st->space = 0;
 }
 
+static byte* zstr_buf = NULL;
+
 static
 const byte* ZSTR(const string st) {
-	static byte* buf = NULL;
 	if(st.base[st.len-1] == 0) return st.base;
-	buf = realloc(buf, st.len+1);
-	memcpy(buf, st.base, st.len);
-	buf[st.len] = 0;
-	return buf;
+	zstr_buf = realloc(zstr_buf, st.len+1);
+	memcpy(zstr_buf, st.base, st.len);
+	zstr_buf[st.len] = 0;
+	return zstr_buf;
+}
+
+void ZSTR_done(void) {
+	if(zstr_buf) {
+		free(zstr_buf);
+		zstr_buf = NULL;
+	}
 }
 
 #define STRANDLEN(st) st.base, st.len

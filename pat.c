@@ -37,56 +37,52 @@ void pats_uninit(void) {
     }
 }
 
-struct pat* pat_setup(const string pattern, enum pat_mode mode, ...) {
+struct pat* pat_plain_compile(const string pattern, const struct pat_plain_info info) {
+	struct plain_pat* self = g_slice_new(struct plain_pat);
+	self->parent.mode = pat_plain;
+	self->caseless = info.caseless;
+	self->match_first = info.match_first;
+	if(self->caseless) {
+		// needs freeing
+		self->substring = (string){
+			.base = g_ascii_strdown(pattern.base, pattern.len),
+			.len = pattern.len
+		};
+	} else {
+		self->substring = pattern; // assuming this is a string literal
+	}
+	return (struct pat*)self;
+}
+
+struct pat* pat_pcre_compile(const string pattern) {
     const char* err = NULL;
     int erroffset = 0;
-	va_list args;
-	va_start(args, mode);
-    if(mode == pat_plain) {
-        struct plain_pat* self = g_new(struct plain_pat,1);
-        self->parent.mode = mode;
-		struct pat_plain_info info = va_arg(args, struct pat_plain_info);
-        self->caseless = info.caseless;
-		self->match_first = info.match_first;
-        if(self->caseless) {
-            // needs freeing
-            self->substring = (string){
-				.base = g_ascii_strdown(pattern.base, pattern.len),
-				.len = pattern.len
-			};
-        } else {
-            self->substring = pattern; // assuming this is a string literal
-        }
-        return (struct pat*)self;
-    } else {
-        struct pcre_pat* self = g_slice_new0(struct pcre_pat);
-        assert(self);
-		const char* zzz;
-		if(pattern.base[pattern.len-1] != '\0') {
-			// sigh
-			zzz = ZSTR(pattern);
-		} else {
-			zzz = pattern.base;
-		}
-        self->parent.mode = mode;
-        self->pat = pcre_compile(zzz, 0,
-                &err,&erroffset,NULL);
-		if(pattern.base[pattern.len-1] != '\0') {
-			free((char*)zzz);
-		}
-        if(!self->pat) {
-            fprintf(stderr,"PCRE COMPILE ERROR %s\n",err);
-            abort();
-            return NULL;
-        }
+	    
+	struct pcre_pat* self = g_slice_new0(struct pcre_pat);
+	assert(self);
+	const char* zzz;
+	if(pattern.base[pattern.len-1] != '\0') {
+		// sigh
+		zzz = ZSTR(pattern);
+	} else {
+		zzz = pattern.base;
+	}
+	self->parent.mode = mode;
+	self->pat = pcre_compile(zzz, 0,
+							 &err,&erroffset,NULL);
+	
+	if(!self->pat) {
+		fprintf(stderr,"PCRE COMPILE ERROR %s\n",err);
+		abort();
+		return NULL;
+	}
 
-        self->study = pcre_study(self->pat,PCRE_STUDY_JIT_COMPILE,&err);
-        if(err) {
-            fprintf(stderr,"Eh, study failed. %s\n",err);
-            assert(self->study==NULL);
-        }
-        return (struct pat*)self;
-    }
+	self->study = pcre_study(self->pat,PCRE_STUDY_JIT_COMPILE,&err);
+	if(err) {
+		fprintf(stderr,"Eh, study failed. %s\n",err);
+		assert(self->study==NULL);
+	}
+	return (struct pat*)self;
 }
 
 void pat_cleanup(struct pat** self) {
