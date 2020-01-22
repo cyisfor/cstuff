@@ -1,17 +1,23 @@
 cmake_minimum_required(VERSION 3.10)
 project(cstuff VERSION 0.1)
 
-define_property(DIRECTORY PROPERTY cstuff_source_dir
+define_property(TARGET PROPERTY cstuff_source_dir
   BRIEF_DOCS where the f-ck cstuff is
   FULL_DOCS where the f-ck cstuff is)
-set_property(cstuff_source_dir DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 
 define_property(TARGET PROPERTY cstuff_sources
   BRIEF_DOCS the sources already added to cstuff regardless of absolute path
   FULL_DOCS cmake is stupid)
 
+#message(WARNING "Creating the cstuff target, yay!")
+file(WRITE "${CMAKE_BINARY_DIR}/cmakesucks.c" "")
+add_library(cstuff "${CMAKE_BINARY_DIR}/cmakesucks.c")
+target_include_directories(cstuff PUBLIC "${cstuff_source_dir}")
+
+set_property(TARGET cstuff PROPERTY cstuff_source_dir "${CMAKE_CURRENT_SOURCE_DIR}")
+
 function(add_cstuff)
-  get_property(cstuff_source_dir PROPERTY cstuff_source_dir)
+  get_property(cstuff_source_dir TARGET cstuff PROPERTY cstuff_source_dir)
   message("ummm ${cstuff_source_dir}")
   message("${CMAKE_CURRENT_SOURCE_DIR}")
   set(options basedb itoa mmapfile pat aton become record ensure)
@@ -20,10 +26,7 @@ function(add_cstuff)
   if(TARGET cstuff)
 	#message(WARNING "Another project already created the cstuff target, yay!")
   else()
-	#message(WARNING "Creating the cstuff target, yay!")
-	file(WRITE "${CMAKE_BINARY_DIR}/cmakesucks.c" "")
-	add_library(cstuff "${CMAKE_BINARY_DIR}/cmakesucks.c")
-    target_include_directories(cstuff PUBLIC "${cstuff_source_dir}")
+
   endif()
 
   function(sourcederp)
