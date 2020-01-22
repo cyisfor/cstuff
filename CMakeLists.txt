@@ -9,10 +9,12 @@ define_property(TARGET PROPERTY cstuff_sources
   BRIEF_DOCS the sources already added to cstuff regardless of absolute path
   FULL_DOCS cmake is stupid, git is stupid, so cstuff might be a submodule and a submodule of a submodule, so it has to remember sources by their unresolved name to avoid multiple definition errors)
 
+if(NOT TARGET cstuff)
 #message(WARNING "Creating the cstuff target, yay!")
 file(WRITE "${CMAKE_BINARY_DIR}/cmakesucks.c" "")
 add_library(cstuff "${CMAKE_BINARY_DIR}/cmakesucks.c")
 target_include_directories(cstuff PUBLIC "${cstuff_source_dir}")
+endif()
 
 set_property(TARGET cstuff PROPERTY cstuff_source_dir "${CMAKE_CURRENT_SOURCE_DIR}")
 
