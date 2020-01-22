@@ -117,7 +117,9 @@ if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
 	  add_test(${name} test_${name})
 	endforeach(name)
   endfunction(my_test)
-  my_tests(record
+  my_tests(
+	record
+	pat
 	aton
 	itoa)
 endif()

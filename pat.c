@@ -67,7 +67,7 @@ struct pat* pat_pcre_compile(const string pattern) {
 	} else {
 		zzz = pattern.base;
 	}
-	self->parent.mode = mode;
+	self->parent.mode = pat_pcre;
 	self->pat = pcre_compile(zzz, 0,
 							 &err,&erroffset,NULL);
 	ZSTR_done();
@@ -89,7 +89,7 @@ void pat_cleanup(struct pat** self) {
     struct pat* doomed = *self;
     *self = NULL;
 
-    if(doomed->mode == pat_plain || doomed->mode == pat_match) {
+    if(doomed->mode == pat_plain) {
         struct plain_pat* cdoom = (struct plain_pat*) doomed;
         if(cdoom->caseless)
             g_free((char*)cdoom->substring.base);
@@ -105,7 +105,7 @@ void pat_cleanup(struct pat** self) {
 }
 
 bool pat_check(struct pat* parent, const string test) {
-    if(parent->mode == pat_plain || parent->mode == pat_match) {
+    if(parent->mode == pat_plain) {
         struct plain_pat* self = (struct plain_pat*) parent;
 		if(test.len != self->substring.len) return false;
 		string test2 = test;
