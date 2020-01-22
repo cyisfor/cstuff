@@ -23,6 +23,7 @@ struct plain_pat {
     struct pat parent;
     string substring;
     gboolean caseless;
+	gboolean match_first;
 };
 
 void pats_init(void) {
@@ -137,7 +138,8 @@ bool pat_check(struct pat* parent, string test) {
 	return rc >= 0;
 }
 
-struct pat_captures pat_capture(struct pat* parent, string test, int start) {
+static
+struct pat_captures pcre_pat_capture(struct pat* parent, string test, int start) {
     g_assert(parent->mode == pat_pcre);
     struct pcre_pat* self = (struct pcre_pat*) parent;
 	if(self->ovecsize == 0) {
@@ -189,7 +191,55 @@ struct pat_captures pat_capture(struct pat* parent, string test, int start) {
 	return cap;
 }
 
+struct pat_captures plain_pat_capture(struct pat* parent, string test, int start) {
+	struct plain_pat* self = (struct plain_pat*)parent;
+	const char* cur = test.base + start;
+	struct pat_captures cap = {};
+	size_t captures = 0;
+	for(;;) {
+		const char* next = memmem(
+			cur, test.len - (cur - test),
+			self->substring.base, self->substring.len);
+		if(next == NULL) break;
+		cur = next;
+		++captures;
+	}
+	cur = test.base + start;
+	cap.ovecsize = captures << 1;
+	cap.ovector = g_slice_alloc(pat.ovecsize * sizeof(*cap.ovector));
+#if 0	
+	/* is this really useful at all? just for pcre continuity?*/
+	cap.ovector[0] = test.base + start;
+	cap.ovector[1] = test.base + test.len - 1;
+#endif
+	captures = 0;
+	for(;;) {
+		const char* next = memmem(
+			cur, test.len - (cur - test),
+			self->substring.base, self->substring.len);
+		if(next == NULL) break;
+		cap.ovector[captures << 1] = next;
+		cap.ovector[(captures << 1)+1] = next + self->substring.len;
+		cur = next;
+		++captures;
+	}
+
+	return cap;
+}
+
+struct pat_captures pat_capture(struct pat* parent, string test, int start) {
+	switch(parent->mode) {
+	case pat_plain:
+		return plain_pat_capture(parent, test, start);
+	case pat_pcre:
+		return pcre_pat_capture(parent, test, start);
+		
+
+	
+	
+
 void pat_capture_done(struct pat_captures* cap) {
 	g_slice_free1(cap->ovecsize * sizeof(int), cap->ovector);
 	cap->ovector = NULL;
+	
 }

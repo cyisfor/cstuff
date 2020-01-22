@@ -4,12 +4,11 @@
 enum pat_mode {
     pat_plain,
     pat_pcre,
-    pat_match
 };
 
 struct pat;
 
-struct pat* pat_setup(string pattern, enum pat_mode mode);
+struct pat* pat_setup(string pattern, enum pat_mode mode, ...);
 void pat_cleanup(struct pat**);
 
 bool pat_check(struct pat*, string test);
