@@ -1,17 +1,19 @@
 cmake_minimum_required(VERSION 3.10)
 project(cstuff VERSION 0.1)
 
-if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
-  set(cstuff_source_dir "${CMAKE_CURRENT_SOURCE_DIR}")
-else()
-  set(cstuff_source_dir "${CMAKE_CURRENT_SOURCE_DIR}" PARENT_SCOPE)
-endif()
+define_property(DIRECTORY PROPERTY cstuff_source_dir
+  BRIEF_DOCS where the f-ck cstuff is
+  FULL_DOCS where the f-ck cstuff is)
+set_property(cstuff_source_dir DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 
 define_property(TARGET PROPERTY cstuff_sources
   BRIEF_DOCS the sources already added to cstuff regardless of absolute path
   FULL_DOCS cmake is stupid)
 
 function(add_cstuff)
+  get_property(cstuff_source_dir PROPERTY cstuff_source_dir)
+  message("ummm ${cstuff_source_dir}")
+  message("${CMAKE_CURRENT_SOURCE_DIR}")
   set(options basedb itoa mmapfile pat aton become record ensure)
   cmake_parse_arguments(PARSE_ARGV 0 want "${options}" "" "")
 
@@ -36,17 +38,19 @@ function(add_cstuff)
 		#message(WARNING "adding source ${arg} : ${cstuff_sources}")
 		list(APPEND cstuff_sources "${arg}")
 		#message(WARNING "added source ${arg} : ${cstuff_sources}")		
-		get_filename_component(aarg "${arg}" ABSOLUTE BASE_DIR
-		  "${cstuff_source_dir}")
+		get_filename_component(aarg "${arg}" ABSOLUTE
+		  BASE_DIR "${cstuff_source_dir}")
+		message("AUGH ${cstuff_source_dir} ${aarg}")
 		list(APPEND sources ${aarg})
 	  else(already_got EQUAL -1)
 		#message(WARNING "already got source ${arg} : ${cstuff_sources}")
 	  endif(already_got EQUAL -1)
 	endforeach()
+	message("SOURCSET ${sources}")
 	if(sources)
 	  set_property(TARGET cstuff
 		PROPERTY cstuff_sources ${cstuff_sources})
-	  target_sources(cstuff PUBLIC ${sources})
+	  target_sources(cstuff PRIVATE ${sources})
 	endif(sources)
   endfunction()
 
