@@ -7,7 +7,7 @@ define_property(TARGET PROPERTY cstuff_source_dir
 
 define_property(TARGET PROPERTY cstuff_sources
   BRIEF_DOCS the sources already added to cstuff regardless of absolute path
-  FULL_DOCS cmake is stupid)
+  FULL_DOCS cmake is stupid, git is stupid, so cstuff might be a submodule and a submodule of a submodule, so it has to remember sources by their unresolved name to avoid multiple definition errors)
 
 #message(WARNING "Creating the cstuff target, yay!")
 file(WRITE "${CMAKE_BINARY_DIR}/cmakesucks.c" "")
@@ -18,16 +18,8 @@ set_property(TARGET cstuff PROPERTY cstuff_source_dir "${CMAKE_CURRENT_SOURCE_DI
 
 function(add_cstuff)
   get_property(cstuff_source_dir TARGET cstuff PROPERTY cstuff_source_dir)
-  message("ummm ${cstuff_source_dir}")
-  message("${CMAKE_CURRENT_SOURCE_DIR}")
   set(options basedb itoa mmapfile pat aton become record ensure)
   cmake_parse_arguments(PARSE_ARGV 0 want "${options}" "" "")
-
-  if(TARGET cstuff)
-	#message(WARNING "Another project already created the cstuff target, yay!")
-  else()
-
-  endif()
 
   function(sourcederp)
 	set(sources)
