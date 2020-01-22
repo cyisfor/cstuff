@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
 	struct pat_captures cap = pat_capture(plain, ferrets, 0);
 	size_t i = 0;
 	for(;i<cap.ovecsize;++i) {
-		printf("capture %ld %d %.*s",
+		printf("capture %ld %d %.*s\n",
 			   i, cap.ovector[i],
 			   (int)LITSIZ("ferrets"),
 			   ferrets.base + cap.ovector[i]);
@@ -20,6 +20,9 @@ int main(int argc, char *argv[])
 
 	pat_capture_done(&cap);
 	pat_cleanup(&plain);
+
+/* TODO: test pat_pcre */
+
 	pats_uninit();
 		
     return 0;
