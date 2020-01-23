@@ -18,17 +18,6 @@ endif()
 
 set_property(TARGET cstuff PROPERTY cstuff_source_dir "${CMAKE_CURRENT_SOURCE_DIR}")
 
-# this is just useful everywhere
-function (add_submodule submod)
-  set(listfile "${CMAKE_CURRENT_SOURCE_DIR}/${submod}/CMakeLists.txt")
-  file(TIMESTAMP "${listfile}" timestamp)
-  if(NOT timestamp)
-	execute_process(COMMAND
-	  git submodule update --init --recursive "${CMAKE_CURRENT_SOURCE_DIR}/${submod}")
-  endif(NOT timestamp)
-  add_subdirectory("${submod}")
-endfunction(add_submodule)
-
 function(add_cstuff)
   get_property(cstuff_source_dir TARGET cstuff PROPERTY cstuff_source_dir)
   set(options itoa mmapfile pat aton become record ensure)
