@@ -51,9 +51,9 @@ typedef struct bstring {
 } bstring;
 
 
-#define CSTRING(str) (*((const string*)&str)) // any kind of string
-#define DEREFSTRING(str) (*((string*)&str)) // any kind of string, but may segfault
-#define STRING(str) ((string){str.base, str.len}) // any kind of string
+#define CSTRING(str) (*((const string*)&(str))) // any kind of string
+#define DEREFSTRING(str) (*((string*)&(str))) // any kind of string, but may segfault
+#define STRING(str) ((string){(str).base, (str).len}) // any kind of string
 #define LITSTR(...) (const string){.base = (__VA_ARGS__), .len = LITSIZ(__VA_ARGS__)}
 static
 bstring bstringstr(const byte* str, size_t len) {
