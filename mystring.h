@@ -143,7 +143,7 @@ void ZSTR_done(void) {
 #define STRANDLEN(st) st.base, st.len
 #include <assert.h>
 
-#define STRING_FOR_PRINTF(st) ({ assert(st.len <= 0xFFFFFFFF); (unsigned int)st.len; }), st.base
+#define STRING_FOR_PRINTF(st) ({ assert((st).len <= 0xFFFFFFFF); (unsigned int)(st).len; }), (st).base
 
 #define NULL_STRING ((string){NULL,0})
 
