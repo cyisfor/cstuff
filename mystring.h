@@ -1,8 +1,9 @@
 #ifndef _MYSTRING_H_
 #define _MYSTRING_H_
 
+#include "itoa.h"
+
 #include <string.h> // memcpy
-#include <stdio.h> // snprintf
 #include <stdlib.h> // malloc
 #include <stdbool.h>
 
@@ -80,16 +81,16 @@ void strgrow(bstring* st, size_t newmin) {
 }
 
 static
-void strreserve(bstring* st, size_t n) {
+byte* strreserve(bstring* st, size_t n) {
 	// could say st.space = pow(1.5,log(st.l+n)/(log(3)-log(2))+1)
 	// but that seems like a lot of expensive math calls, when the loop'll only happen like 4 times max
 	while(st->len + n > st->space) strgrow(st,st->len+n);
+	return st->base + st->len;
 }
 
 static
 void straddn(bstring* st, const byte* c, size_t n) {
-	strreserve(st, n);
-	memcpy(st->base + st->len, c, n);
+	memcpy(strreserve(st, n), c, n);
 	st->len += n;
 }
 
@@ -97,8 +98,7 @@ void straddn(bstring* st, const byte* c, size_t n) {
 
 static
 void straddint(bstring* st, int i) {
-	strreserve(st,0x10);
-	st->len += snprintf(st->base + st->len, 0x10, "%x",i);
+	st->len += int_to_base(strreserve(st, 0x10), 0x10, i, 0x10);
 }
 
 static
